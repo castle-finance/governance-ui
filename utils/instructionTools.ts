@@ -27,11 +27,15 @@ import {
   GovernedMintInfoAccount,
   GovernedTokenAccount,
 } from './tokens'
-import { UiInstruction } from './uiTypes/proposalCreationTypes'
+import {
+  CastleDepositForm,
+  UiInstruction,
+} from './uiTypes/proposalCreationTypes'
 import { ConnectedVoltSDK, FriktionSDK } from '@friktion-labs/friktion-sdk'
 import { AnchorWallet } from '@friktion-labs/friktion-sdk/dist/cjs/src/miscUtils'
 import { WSOL_MINT } from '@components/instructions/tools'
 import Decimal from 'decimal.js'
+import { VaultClient } from '@castlefinance/vault-sdk'
 
 export const validateInstruction = async ({
   schema,
@@ -212,6 +216,64 @@ export async function getFriktionDepositInstruction({
   }
   return obj
 }
+
+// // // //
+// // // //
+// TODO - finish this
+export async function getCastleDepositInstruction({
+  schema,
+  form,
+  amount,
+  connection,
+  wallet,
+  setFormErrors,
+}: {
+  schema: any
+  form: CastleDepositForm
+  amount: number
+  programId: PublicKey | undefined
+  connection: ConnectionContext
+  wallet: WalletAdapter | undefined
+  setFormErrors: any
+}): Promise<UiInstruction> {
+  const isValid = await validateInstruction({ schema, form, setFormErrors })
+
+  let serializedInstruction = ''
+  const prerequisiteInstructions: TransactionInstruction[] = []
+  const governedTokenAccount = form.governedTokenAccount as GovernedTokenAccount
+  const castleVaultId = new PublicKey(form.castleVaultId as string)
+
+  const signers: Keypair[] = []
+  if (
+    isValid &&
+    amount &&
+    amount > 0 &&
+    governedTokenAccount?.token?.publicKey &&
+    governedTokenAccount?.token &&
+    governedTokenAccount?.mint?.account &&
+    governedTokenAccount?.governance &&
+    wallet
+  ) {
+    // Init Castle VaultClient and do the thing
+    // const castleVaultClient = new VaultClient();
+    // Logs destination VaultID
+    console.log(castleVaultId)
+  }
+
+  // Build + return UI instruction
+  const obj: UiInstruction = {
+    serializedInstruction,
+    isValid,
+    governance: governedTokenAccount?.governance,
+    prerequisiteInstructions: prerequisiteInstructions,
+    signers,
+    shouldSplitIntoSeparateTxs: true,
+  }
+
+  return obj
+}
+// // // //
+// // // //
 
 export async function getTransferInstruction({
   schema,
