@@ -41,6 +41,14 @@ export interface FriktionDepositForm {
   mintInfo: MintInfo | undefined
 }
 
+export interface CastleDepositForm {
+  amount: number | undefined
+  governedTokenAccount: GovernedTokenAccount | undefined
+  castleVaultId: string
+  programId: string | undefined
+  mintInfo: MintInfo | undefined
+}
+
 export interface GrantForm {
   destinationAccount: string
   amount: number | undefined
@@ -239,6 +247,7 @@ export enum Instructions {
   Clawback,
   CreateAssociatedTokenAccount,
   DepositIntoVolt,
+  DepositIntoCastle,
   CreateSolendObligationAccount,
   InitSolendObligationAccount,
   DepositReserveLiquidityAndObligationCollateral,
