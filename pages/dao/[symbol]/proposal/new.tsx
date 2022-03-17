@@ -57,6 +57,7 @@ import MakeAddSpotMarket from './components/instructions/Mango/MakeAddSpotMarket
 import MakeChangeSpotMarket from './components/instructions/Mango/MakeChangeSpotMarket'
 import MakeCreatePerpMarket from './components/instructions/Mango/MakeCreatePerpMarket'
 import useCreateProposal from '@hooks/useCreateProposal'
+import CastleDeposit from './components/instructions/Castle/CastleDeposit'
 
 const schema = yup.object().shape({
   title: yup.string().required('Title is required'),
@@ -277,6 +278,8 @@ const New = () => {
         )
       case Instructions.DepositIntoVolt:
         return <FriktionDeposit index={idx} governance={governance} />
+      case Instructions.DepositIntoCastle:
+        return <CastleDeposit index={idx} governance={governance} />
       case Instructions.CreateSolendObligationAccount:
         return <CreateObligationAccount index={idx} governance={governance} />
       case Instructions.InitSolendObligationAccount:
