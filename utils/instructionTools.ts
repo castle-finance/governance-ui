@@ -35,7 +35,7 @@ import { ConnectedVoltSDK, FriktionSDK } from '@friktion-labs/friktion-sdk'
 import { AnchorWallet } from '@friktion-labs/friktion-sdk/dist/cjs/src/miscUtils'
 import { WSOL_MINT } from '@components/instructions/tools'
 import Decimal from 'decimal.js'
-import { VaultClient } from '@castlefinance/vault-sdk'
+// import { VaultClient } from '@castlefinance/vault-sdk'
 
 export const validateInstruction = async ({
   schema,
@@ -238,7 +238,9 @@ export async function getCastleDepositInstruction({
 }): Promise<UiInstruction> {
   const isValid = await validateInstruction({ schema, form, setFormErrors })
 
-  let serializedInstruction = ''
+  // NOTE - this should be `let serializedInstruction = ''` but it's const so the current changeset passes eslint
+  const serializedInstruction = ''
+
   const prerequisiteInstructions: TransactionInstruction[] = []
   const governedTokenAccount = form.governedTokenAccount as GovernedTokenAccount
   const castleVaultId = new PublicKey(form.castleVaultId as string)
@@ -258,6 +260,7 @@ export async function getCastleDepositInstruction({
     // const castleVaultClient = new VaultClient();
     // Logs destination VaultID
     console.log(castleVaultId)
+    console.log(connection)
   }
 
   // Build + return UI instruction

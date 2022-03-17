@@ -18,7 +18,6 @@ import { ProgramAccount } from '@solana/spl-governance'
 import GovernedAccountSelect from '../../GovernedAccountSelect'
 import { getCastleDepositInstruction } from '@utils/instructionTools'
 import Select from '@components/inputs/Select'
-import * as CASTLE_SDK from '@castlefinance/vault-sdk'
 import { FriktionSnapshot, VoltSnapshot } from '@friktion-labs/friktion-sdk'
 
 // // // //
@@ -194,6 +193,7 @@ const CastleDeposit = ({
           className="text-blue block text-right"
           href="https://castle.finance"
           target="_blank"
+          rel="noreferrer"
         >
           View destination vault
         </a>
