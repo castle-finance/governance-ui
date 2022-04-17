@@ -58,6 +58,7 @@ import MakeChangeSpotMarket from './components/instructions/Mango/MakeChangeSpot
 import MakeCreatePerpMarket from './components/instructions/Mango/MakeCreatePerpMarket'
 import useCreateProposal from '@hooks/useCreateProposal'
 import CastleDeposit from './components/instructions/Castle/CastleDeposit'
+import { InstructionDataWithHoldUpTime } from 'actions/createProposal'
 
 const schema = yup.object().shape({
   title: yup.string().required('Title is required'),
@@ -187,6 +188,8 @@ const New = () => {
     )
 
     const instructions: UiInstruction[] = await handleGetInstructions()
+    console.log('new', instructions)
+
     let proposalAddress: PublicKey | null = null
     if (!realm) {
       handleTurnOffLoaders()
@@ -211,6 +214,7 @@ const New = () => {
           chunkSplitByDefault: x.chunkSplitByDefault || false,
           signers: x.signers,
           shouldSplitIntoSeparateTxs: x.shouldSplitIntoSeparateTxs,
+          nonSplGovIx: x.nonSplGovIx,
         }
       })
 

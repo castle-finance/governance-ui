@@ -90,7 +90,7 @@ export async function signTransactions({
   }[]
   wallet: Wallet
   connection: Connection
-}) {
+}): Promise<Transaction[]> {
   const blockhash = (await connection.getRecentBlockhash('max')).blockhash
   transactionsAndSigners.forEach(({ transaction, signers = [] }) => {
     transaction.recentBlockhash = blockhash
@@ -99,6 +99,7 @@ export async function signTransactions({
       transaction.partialSign(...signers)
     }
   })
+
   return await wallet.signAllTransactions(
     transactionsAndSigners.map(({ transaction }) => transaction)
   )
@@ -165,6 +166,7 @@ export async function sendSignedTransaction({
 
     console.log('sined transaction', signedTransaction)
 
+    // Simulate failed transaction to parse out an error reason
     try {
       console.log('start simulate')
       simulateResult = (
@@ -176,6 +178,122 @@ export async function sendSignedTransaction({
 
     console.log('simulate result', simulateResult)
 
+    // Parse and throw error if simulation fails
+    if (simulateResult && simulateResult.err) {
+      if (simulateResult.logs) {
+        console.log('simulate resultlogs', simulateResult.logs)
+
+        for (let i = simulateResult.logs.length - 1; i >= 0; --i) {
+          const line = simulateResult.logs[i]
+
+          if (line.startsWith('Program log: ')) {
+            throw new TransactionError(
+              'Transaction failed: ' + line.slice('Program log: '.length),
+              txid
+            )
+          }
+        }
+      }
+      throw new TransactionError(JSON.stringify(simulateResult.err), txid)
+    }
+
+    console.log('transaction error lasdkasdn')
+
+    throw new TransactionError('Transaction failed', txid)
+  } finally {
+    done = true
+  }
+
+  notify({ message: successMessage, type: 'success', txid })
+
+  console.log('Latency', txid, getUnixTs() - startTime)
+  return txid
+}
+
+/**
+ * Send a primary transaction and an adjacent one
+ */
+export async function sendSignedAndAdjacentTransactions({
+  signedTransaction,
+  adjacentTransaction,
+  connection,
+  sendingMessage = 'Sending transaction...',
+  successMessage = 'Transaction confirmed',
+  timeout = DEFAULT_TIMEOUT,
+}: {
+  signedTransaction: Transaction
+  adjacentTransaction: Transaction
+  connection: Connection
+  sendingMessage?: string
+  successMessage?: string
+  timeout?: number
+}): Promise<string> {
+  // debugger
+  console.log('raw tx')
+
+  const rawTransaction = signedTransaction.serialize()
+  const rawAdjTransaction = adjacentTransaction.serialize()
+  console.log('raw tx', rawTransaction)
+
+  const startTime = getUnixTs()
+
+  notify({ message: sendingMessage })
+  console.log('notify')
+
+  const [txid, adjTxId]: TransactionSignature[] = await Promise.all([
+    connection.sendRawTransaction(rawTransaction, {
+      skipPreflight: true,
+    }),
+    connection.sendRawTransaction(rawAdjTransaction, {
+      skipPreflight: true,
+    }),
+  ])
+  console.log('notify2')
+
+  console.log('Started awaiting confirmation for', txid)
+
+  let done = false
+
+  ;(async () => {
+    while (!done && getUnixTs() - startTime < timeout) {
+      connection.sendRawTransaction(rawTransaction, {
+        skipPreflight: true,
+      })
+
+      await sleep(3000)
+    }
+  })()
+
+  try {
+    console.log('calling confirmation sig', txid, timeout, connection)
+
+    console.log(
+      'calling signatures confirmation',
+      await awaitTransactionSignatureConfirmation(txid, timeout, connection),
+      await awaitTransactionSignatureConfirmation(adjTxId, timeout, connection)
+    )
+  } catch (err) {
+    if (err.timeout) {
+      throw new Error('Timed out awaiting confirmation on transaction')
+    }
+
+    let simulateResult: SimulatedTransactionResponse | null = null
+
+    console.log('sined transaction', signedTransaction)
+
+    // Simulate failed transaction to parse out an error reason
+    try {
+      console.log('start simulate')
+      simulateResult = (
+        await simulateTransaction(connection, signedTransaction, 'single')
+      ).value
+    } catch (error) {
+      console.log('Error simulating: ', error)
+    }
+
+    console.log('simulate result', simulateResult)
+
+    // Parse and throw error if simulation fails
     if (simulateResult && simulateResult.err) {
       if (simulateResult.logs) {
         console.log('simulate resultlogs', simulateResult.logs)

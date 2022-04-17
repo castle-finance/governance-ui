@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { Fragment, useEffect, useState } from 'react'
 import { executeTransaction } from 'actions/executeTransaction'
 import {
   InstructionExecutionStatus,
@@ -7,7 +7,12 @@ import {
   ProposalState,
 } from '@solana/spl-governance'
 import React from 'react'
-import { CheckCircleIcon, PlayIcon, RefreshIcon } from '@heroicons/react/solid'
+import {
+  CheckCircleIcon,
+  CheckIcon,
+  PlayIcon,
+  RefreshIcon,
+} from '@heroicons/react/solid'
 import Button from '@components/Button'
 import { RpcContext } from '@solana/spl-governance'
 import useRealm from '@hooks/useRealm'
@@ -17,6 +22,15 @@ import { PublicKey } from '@solana/web3.js'
 import Tooltip from '@components/Tooltip'
 import { getProgramVersionForRealm } from '@models/registry/api'
 import { notify } from '@utils/notifications'
+import { Listbox } from '@headlessui/react'
+
+const people = [
+  { id: 1, name: 'Durward Reynolds' },
+  { id: 2, name: 'Kenton Towne' },
+  { id: 3, name: 'Therese Wunsch' },
+  { id: 4, name: 'Benedict Kessler' },
+  { id: 5, name: 'Katelyn Rohan' },
+]
 
 export enum PlayState {
   Played,
@@ -41,6 +55,7 @@ export function ExecuteInstructionButton({
   const connection = useWalletStore((s) => s.connection)
   const fetchRealm = useWalletStore((s) => s.actions.fetchRealm)
   const connected = useWalletStore((s) => s.connected)
+  const [selectedPerson, setSelectedPerson] = useState(people[0])
 
   const [currentSlot, setCurrentSlot] = useState(0)
 

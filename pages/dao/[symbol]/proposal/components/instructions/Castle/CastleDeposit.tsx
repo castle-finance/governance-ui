@@ -3,6 +3,7 @@ import Input from '@components/inputs/Input'
 import useRealm from '@hooks/useRealm'
 import { getMintMinAmountAsDecimal } from '@tools/sdk/units'
 import { PublicKey } from '@solana/web3.js'
+// import * as anchor from '@project-serum/anchor'
 import { precision } from '@utils/formatting'
 import useWalletStore from 'stores/useWalletStore'
 import { GovernedMultiTypeAccount } from '@utils/tokens'
@@ -18,9 +19,27 @@ import { ProgramAccount } from '@solana/spl-governance'
 import GovernedAccountSelect from '../../GovernedAccountSelect'
 import { getCastleDepositInstruction } from '@utils/instructionTools'
 import Select from '@components/inputs/Select'
-import { FriktionSnapshot, VoltSnapshot } from '@friktion-labs/friktion-sdk'
+// import { VaultClient } from '@castlefinance/vault-sdk'
+// import { FriktionSnapshot, VoltSnapshot } from '@friktion-labs/friktion-sdk'
 
 // // // //
+// TODO - Pull from config
+export enum StrategyTypes {
+  maxYield = 'maxYield',
+  equalAllocation = 'equalAllocation',
+}
+export type StrategyType = `${StrategyTypes}`
+export interface VaultConfig {
+  name: string
+  network: 'devnet' // ENHANCEMENT - add "mainnet-beta" | "testnet" here - pull this value from `WalletAdapterNetwork` in "@solana/wallet-adapter-base"?
+  vault_id: string
+  rebalance_threshold: number
+  token_label: string // i.e. "SOL"
+  token_mint: string // i.e. SOL_MINT
+  version: string // i.e "0.1.1"
+  strategy_type: StrategyType
+}
+// // //
 
 const CastleDeposit = ({
   index,
@@ -46,7 +65,7 @@ const CastleDeposit = ({
   })
 
   // TODO - replace VoltSnapshot here with castle-specific alternative
-  const [castleVaults, setCastleVaults] = useState<VoltSnapshot[] | null>(null)
+  const [castleVaults, setCastleVaults] = useState<VaultConfig[] | null>(null)
 
   const [governedAccount, setGovernedAccount] = useState<
     ProgramAccount<Governance> | undefined
@@ -93,7 +112,8 @@ const CastleDeposit = ({
   }
 
   async function getInstruction(): Promise<UiInstruction> {
-    return getCastleDepositInstruction({
+    // console.log('GETTING IX')
+    const ix = await getCastleDepositInstruction({
       schema,
       form,
       amount: form.amount ?? 0,
@@ -102,20 +122,25 @@ const CastleDeposit = ({
       wallet,
       setFormErrors,
     })
+    // console.log(ix)
+    // console.log(form.governedTokenAccount?.transferAddress?.toString())
+    // console.log(form.governedTokenAccount?.mint?.publicKey.toString())
+    return ix
   }
 
   // TODO - where are we doing to pull this metadata from?
   useEffect(() => {
-    // call for the mainnet friktion volts
-    const callfriktionRequest = async () => {
-      const response = await fetch(
-        'https://friktion-labs.github.io/mainnet-tvl-snapshots/friktionSnapshot.json'
-      )
-      const parsedResponse = (await response.json()) as FriktionSnapshot
-      setCastleVaults(parsedResponse.allMainnetVolts as VoltSnapshot[])
+    // const connection = useWalletStore((s) => s.connection)
+    // const wallet = useWalletStore((s) => s.current)
+
+    // Grab Castle configs from our config service.
+    const getCastleConfig = async () => {
+      const response = await fetch('https://configs-api.vercel.app/api/configs')
+      const castleVaults = (await response.json()) as VaultConfig[]
+      setCastleVaults(castleVaults)
     }
 
-    callfriktionRequest()
+    getCastleConfig()
   }, [])
 
   useEffect(() => {
@@ -164,38 +189,33 @@ const CastleDeposit = ({
         }
         error={formErrors['castleVaultId']}
       >
-        {castleVaults
-          ?.filter((x) => !x.isInCircuits)
-          .map((value) => (
-            <Select.Option key={value.voltVaultId} value={value.voltVaultId}>
-              <div className="break-all text-fgd-1 ">
-                <div className="mb-2">{`Volt #${value.voltType} - ${
-                  value.voltType === 1
-                    ? 'Generate Income'
-                    : value.voltType === 2
-                    ? 'Sustainable Stables'
-                    : ''
-                } - ${value.underlyingTokenSymbol} - APY: ${value.apy}%`}</div>
-                <div className="space-y-0.5 text-xs text-fgd-3">
-                  <div className="flex items-center">
-                    Deposit Token: {value.depositTokenSymbol}
-                  </div>
-                  {/* <div>Capacity: {}</div> */}
+        {castleVaults?.map((value) => (
+          <Select.Option
+            key={value.vault_id}
+            value={`${value.name} - ${value.strategy_type}`}
+          >
+            <div className="break-all text-fgd-1 ">
+              <div className="mb-2">{`Vault: ${value.name} - ${value.strategy_type}`}</div>
+              <div className="space-y-0.5 text-xs text-fgd-3">
+                <div className="flex items-center">
+                  Deposit Token: {value.token_mint}
                 </div>
+                {/* <div>Capacity: {}</div> */}
               </div>
-            </Select.Option>
-          ))}
+            </div>
+          </Select.Option>
+        ))}
       </Select>
 
       {/* TODO - add link to vault you'll be depositing to */}
       {form.castleVaultId !== '' && (
         <a
-          className="text-blue block text-right"
+          className="text-blue block"
           href="https://castle.finance"
           target="_blank"
           rel="noreferrer"
         >
-          View destination vault
+          View destination vault ↗️
         </a>
       )}
 

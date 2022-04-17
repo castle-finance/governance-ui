@@ -1,5 +1,5 @@
 import { PublicKey } from '@solana/web3.js'
-import { ExternalLinkIcon } from '@heroicons/react/outline'
+import { CheckIcon, ExternalLinkIcon } from '@heroicons/react/outline'
 import {
   AccountMetaData,
   Proposal,
@@ -11,7 +11,7 @@ import {
   InstructionDescriptor,
   WSOL_MINT,
 } from './tools'
-import React, { useEffect, useState } from 'react'
+import React, { Fragment, useEffect, useState } from 'react'
 import useWalletStore from '../../stores/useWalletStore'
 import { getExplorerUrl } from '../explorer/tools'
 import { getProgramName } from './programs/names'
@@ -25,6 +25,16 @@ import axios from 'axios'
 import { notify } from '@utils/notifications'
 import useGovernanceAssets from '@hooks/useGovernanceAssets'
 import tokenService from '@utils/services/token'
+import { Listbox } from '@headlessui/react'
+import InstructionOptions from '@components/InstructionOptions'
+
+const people = [
+  { id: 1, name: 'Durward Reynolds' },
+  { id: 2, name: 'Kenton Towne' },
+  { id: 3, name: 'Therese Wunsch' },
+  { id: 4, name: 'Benedict Kessler' },
+  { id: 5, name: 'Katelyn Rohan' },
+]
 
 export default function InstructionCard({
   index,
@@ -42,6 +52,8 @@ export default function InstructionCard({
   const connection = useWalletStore((s) => s.connection)
   const tokenRecords = useWalletStore((s) => s.selectedRealm)
   const [descriptor, setDescriptor] = useState<InstructionDescriptor>()
+  const [selectedPerson, setSelectedPerson] = useState(people[0])
+
   const [playing, setPlaying] = useState(
     proposalInstruction.account.executedAt
       ? PlayState.Played
@@ -167,14 +179,18 @@ export default function InstructionCard({
         />
 
         {proposal && (
-          <ExecuteInstructionButton
-            proposal={proposal}
-            proposalInstruction={proposalInstruction}
-            playing={playing}
-            setPlaying={setPlaying}
-          />
+          <React.Fragment>
+            <ExecuteInstructionButton
+              proposal={proposal}
+              proposalInstruction={proposalInstruction}
+              playing={playing}
+              setPlaying={setPlaying}
+            />
+            <InstructionOptions />
+          </React.Fragment>
         )}
       </div>
+      <div className="flex justify-end items-center"></div>
     </div>
   )
 }

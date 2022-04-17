@@ -1,6 +1,7 @@
 import { serializeInstructionToBase64 } from '@solana/spl-governance'
 import {
   ASSOCIATED_TOKEN_PROGRAM_ID,
+  NATIVE_MINT,
   Token,
   TOKEN_PROGRAM_ID,
   u64,
@@ -8,12 +9,13 @@ import {
 import { WalletAdapter } from '@solana/wallet-adapter-base'
 import {
   Account,
+  Connection,
   Keypair,
   PublicKey,
   SystemProgram,
   TransactionInstruction,
 } from '@solana/web3.js'
-import { BN } from '@project-serum/anchor'
+import { BN, Provider } from '@project-serum/anchor'
 import { Marinade, MarinadeConfig } from '@marinade.finance/marinade-ts-sdk'
 import {
   getMintNaturalAmountFromDecimal,
@@ -35,7 +37,9 @@ import { ConnectedVoltSDK, FriktionSDK } from '@friktion-labs/friktion-sdk'
 import { AnchorWallet } from '@friktion-labs/friktion-sdk/dist/cjs/src/miscUtils'
 import { WSOL_MINT } from '@components/instructions/tools'
 import Decimal from 'decimal.js'
+import { VaultClient } from '@castlefinance/vault-sdk'
 // import { VaultClient } from '@castlefinance/vault-sdk'
+// import * as anchor from '@project-serum/anchor'
 
 export const validateInstruction = async ({
   schema,
@@ -239,13 +243,17 @@ export async function getCastleDepositInstruction({
   const isValid = await validateInstruction({ schema, form, setFormErrors })
 
   // NOTE - this should be `let serializedInstruction = ''` but it's const so the current changeset passes eslint
-  const serializedInstruction = ''
+  let serializedInstruction = ''
 
   const prerequisiteInstructions: TransactionInstruction[] = []
   const governedTokenAccount = form.governedTokenAccount as GovernedTokenAccount
-  const castleVaultId = new PublicKey(form.castleVaultId as string)
+
+  // const castleVaultId = new PublicKey(form.castleVaultId as string)
 
   const signers: Keypair[] = []
+
+  let nonSplGovIx: TransactionInstruction | undefined = undefined
+
   if (
     isValid &&
     amount &&
@@ -257,10 +265,50 @@ export async function getCastleDepositInstruction({
     wallet
   ) {
     // Init Castle VaultClient and do the thing
-    // const castleVaultClient = new VaultClient();
     // Logs destination VaultID
-    console.log(castleVaultId)
-    console.log(connection)
+    const provider = new Provider(
+      connection.current,
+      (wallet as unknown) as AnchorWallet,
+      {
+        preflightCommitment: 'confirmed',
+        commitment: 'confirmed',
+      }
+    )
+
+    // Loads up lending markets and ensures up-to-date
+    const vaultClient = await VaultClient.load(
+      provider,
+      'devnet',
+      NATIVE_MINT,
+      new PublicKey('3PUZJamT1LAwgkjT58PHoY8izM1Y8jRz2A1UwiV4JTkk')
+    )
+
+    console.log('cas: vaultClient', vaultClient)
+    const { depositIxs, refreshIx, wSolSigner } = await vaultClient.depositIxs(
+      // @ts-ignore - TODO: dont do this
+      (wallet as unknown) as AnchorWallet,
+      1,
+      governedTokenAccount.governance.pubkey // TODO - use governedTokenAccount.governance.pubkey
+    )
+
+    nonSplGovIx = refreshIx
+
+    // Grab last ix to be primarily displayed
+    const lastIx = depositIxs.splice(-1)[0]
+    serializedInstruction = serializeInstructionToBase64(lastIx)
+
+    // Add rest of the ixs with last one already removed
+    prerequisiteInstructions.push(...depositIxs)
+
+    // Add signer
+    signers.push(wSolSigner)
+
+    // console.log('cas: prerequisiteInstructions', depositIxs, lastIx)
+    // console.log('cas: lastIx', lastIx)
+    // console.log('cas: refreshIx', refreshIx)
+    // console.log('cas: signers', signers)
+
+    // // // // //
   }
 
   // Build + return UI instruction
@@ -270,12 +318,56 @@ export async function getCastleDepositInstruction({
     governance: governedTokenAccount?.governance,
     prerequisiteInstructions: prerequisiteInstructions,
     signers,
-    shouldSplitIntoSeparateTxs: true,
+    shouldSplitIntoSeparateTxs: false,
+    nonSplGovIx,
   }
+  console.log('cas: obj', obj)
+
+  /**
+   * Notes - max bytes: 1232
+   * - title and description of proposal adds bytes
+   *    - "a": 1824
+   * - deposit ix: 450 bytes https://explorer.solana.com/tx/inspector?signatures=%255B%25221111111111111111111111111111111111111111111111111111111111111111%2522%255D&message=AQAECjv8vgdK3gaQSxuNfKNv09oHS4e8dwdCLmfgBdTc9ov5I3lPdhpReI3O%252BdY5VBoYJ0FLtErTP7Ge1bTN9o8vbymj75nQe4Eut1j%252FBH0TxfDg9HdyykhMJ2%252BKO6DIzBJj0HBdcGDYoqdydCm%252Bwa7tfaQ7GUhNj%252BbL8Fd4zHnh6lXJn%252BKphL%252FMki%252FSA1JxoNwtNe4Agazz1cIIc8%252FrKf2UeRumOiEPJLpTtF9Am%252FDHJhBd0wKXPXAWob2nyhkJLFixdSe0YH7dHFjIPyyeNPH%252BXz7GwL%252B2QUwdlYjRQQmFhW9MBt324ddloZPZy%252BFGzut5rBy0he1fWzeROoz1hX7%252FAKkGp9UXGMd0yShWY5hpHV62i164o5tLbVxzVVshAAAAADnAWWLTJsv%252B55IPLY4JyyP44i6CfmlZIECCQMJDADggmHZXU%252FQZMeLAx6ztUQD8CG5ksQQLYpbEyGgpkAXQrCkBCQkBBgIDBAUABwgQ8iPGiVLh8rYBAAAAAAAAAA%253D%253D&cluster=devnet
+   *    - failed from proposal: 567 bytes (177 bytes more) https://explorer.solana.com/tx/aeLFN6S3r4f2zNnba5fae3P2WjMJBUpHdX7MgoRsazbDGMFT5L4eWmPh27jY4krnTJvZcXKfuxF6AWrdaP6De3r/inspect?cluster=devnet
+   * - refresh simulate: 970 bytes
+   *    - failed from proposal: 1498 bytes
+   * - refresh + deposit: 1798 bytes
+   * - everything: 1832 bytes
+   * - wrap/unwrap: 430 bytes
+   */
 
   return obj
 }
-// // // //
+
+export async function getCastleRefreshInstruction({
+  connection,
+  wallet,
+}: {
+  connection: Connection
+  wallet: WalletAdapter | undefined
+}) {
+  const provider = new Provider(
+    connection,
+    (wallet as unknown) as AnchorWallet,
+    {
+      preflightCommitment: 'confirmed',
+      commitment: 'confirmed',
+    }
+  )
+
+  const vaultClient = await VaultClient.load(
+    provider,
+    // TODO - infer from env
+    'devnet',
+    NATIVE_MINT,
+    new PublicKey('3PUZJamT1LAwgkjT58PHoY8izM1Y8jRz2A1UwiV4JTkk')
+  )
+
+  const refreshIx = vaultClient.getRefreshIx()
+
+  return refreshIx
+}
+
 // // // //
 
 export async function getTransferInstruction({
