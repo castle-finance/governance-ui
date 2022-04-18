@@ -51,6 +51,10 @@ import WithdrawObligationCollateralAndRedeemReserveLiquidity from './components/
 import SplTokenTransfer from './components/instructions/SplTokenTransfer'
 import VoteBySwitch from './components/VoteBySwitch'
 import FriktionDeposit from './components/instructions/Friktion/FriktionDeposit'
+import CreateNftPluginRegistrar from './components/instructions/NftVotingPlugin/CreateRegistrar'
+import CreateNftPluginMaxVoterWeightRecord from './components/instructions/NftVotingPlugin/CreateMaxVoterWeightRecord'
+import ConfigureNftPluginCollection from './components/instructions/NftVotingPlugin/ConfigureCollection'
+import FriktionWithdraw from './components/instructions/Friktion/FriktionWithdraw'
 import MakeChangePerpMarket from './components/instructions/Mango/MakeChangePerpMarket'
 import MakeAddOracle from './components/instructions/Mango/MakeAddOracle'
 import MakeAddSpotMarket from './components/instructions/Mango/MakeAddSpotMarket'
@@ -58,6 +62,9 @@ import MakeChangeSpotMarket from './components/instructions/Mango/MakeChangeSpot
 import MakeCreatePerpMarket from './components/instructions/Mango/MakeCreatePerpMarket'
 import useCreateProposal from '@hooks/useCreateProposal'
 import CastleDeposit from './components/instructions/Castle/CastleDeposit'
+import RealmConfig from './components/instructions/RealmConfig'
+import CloseTokenAccount from './components/instructions/CloseTokenAccount'
+import { InstructionDataWithHoldUpTime } from 'actions/createProposal'
 
 const schema = yup.object().shape({
   title: yup.string().required('Title is required'),
@@ -68,9 +75,8 @@ const defaultGovernanceCtx: InstructionsContext = {
   governance: null,
   setGovernance: () => null,
 }
-export const NewProposalContext = createContext<InstructionsContext>(
-  defaultGovernanceCtx
-)
+export const NewProposalContext =
+  createContext<InstructionsContext>(defaultGovernanceCtx)
 
 // Takes the first encountered governance account
 function extractGovernanceAccountFromInstructionsData(
@@ -89,20 +95,15 @@ const New = () => {
 
   const { getAvailableInstructions } = useGovernanceAssets()
   const availableInstructions = getAvailableInstructions()
-  const {
-    fetchRealmGovernance,
-    fetchTokenAccountsForSelectedRealmGovernances,
-  } = useWalletStore((s) => s.actions)
+  const { fetchRealmGovernance } = useWalletStore((s) => s.actions)
   const [voteByCouncil, setVoteByCouncil] = useState(false)
   const [form, setForm] = useState({
     title: '',
     description: '',
   })
   const [formErrors, setFormErrors] = useState({})
-  const [
-    governance,
-    setGovernance,
-  ] = useState<ProgramAccount<Governance> | null>(null)
+  const [governance, setGovernance] =
+    useState<ProgramAccount<Governance> | null>(null)
   const [isLoadingSignedProposal, setIsLoadingSignedProposal] = useState(false)
   const [isLoadingDraft, setIsLoadingDraft] = useState(false)
   const isLoading = isLoadingSignedProposal || isLoadingDraft
@@ -201,20 +202,45 @@ const New = () => {
         handleTurnOffLoaders()
         throw Error('No governance selected')
       }
-      const instructionsData = instructions.map((x) => {
-        return {
-          data: x.serializedInstruction
-            ? getInstructionDataFromBase64(x.serializedInstruction)
-            : null,
-          holdUpTime: x.customHoldUpTime
-            ? getTimestampFromDays(x.customHoldUpTime)
-            : selectedGovernance?.account?.config.minInstructionHoldUpTime,
-          prerequisiteInstructions: x.prerequisiteInstructions || [],
-          chunkSplitByDefault: x.chunkSplitByDefault || false,
-          signers: x.signers,
-          shouldSplitIntoSeparateTxs: x.shouldSplitIntoSeparateTxs,
-        }
-      })
+
+      const additionalInstructions = [
+        ...(instructions
+          .flatMap((instruction) => {
+            return instruction.additionalSerializedInstructions?.map((x) => {
+              return {
+                data: x ? getInstructionDataFromBase64(x) : null,
+                holdUpTime: instruction.customHoldUpTime
+                  ? getTimestampFromDays(instruction.customHoldUpTime)
+                  : selectedGovernance?.account?.config
+                      .minInstructionHoldUpTime,
+                prerequisiteInstructions: [],
+                chunkSplitByDefault: instruction.chunkSplitByDefault || false,
+                signers: instruction.signers,
+                shouldSplitIntoSeparateTxs:
+                  instruction.shouldSplitIntoSeparateTxs,
+              }
+            })
+          })
+          .filter((x) => x) as InstructionDataWithHoldUpTime[]),
+      ]
+
+      const instructionsData = [
+        ...additionalInstructions,
+        ...instructions.map((x) => {
+          return {
+            data: x.serializedInstruction
+              ? getInstructionDataFromBase64(x.serializedInstruction)
+              : null,
+            holdUpTime: x.customHoldUpTime
+              ? getTimestampFromDays(x.customHoldUpTime)
+              : selectedGovernance?.account?.config.minInstructionHoldUpTime,
+            prerequisiteInstructions: x.prerequisiteInstructions || [],
+            chunkSplitByDefault: x.chunkSplitByDefault || false,
+            signers: x.signers,
+            shouldSplitIntoSeparateTxs: x.shouldSplitIntoSeparateTxs,
+          }
+        }),
+      ]
 
       try {
         // Fetch governance to get up to date proposalCount
@@ -249,17 +275,11 @@ const New = () => {
   }, [instructionsData[0].governedAccount?.pubkey])
 
   useEffect(() => {
-    const governedAccount = extractGovernanceAccountFromInstructionsData(
-      instructionsData
-    )
+    const governedAccount =
+      extractGovernanceAccountFromInstructionsData(instructionsData)
 
     setGovernance(governedAccount)
   }, [instructionsData])
-
-  useEffect(() => {
-    //fetch to be up to date with amounts
-    fetchTokenAccountsForSelectedRealmGovernances()
-  }, [])
 
   const getCurrentInstruction = ({ typeId, idx }) => {
     switch (typeId) {
@@ -288,6 +308,8 @@ const New = () => {
         return <CastleDeposit index={idx} governance={governance} />
       case Instructions.DepositIntoVolt:
         return <FriktionDeposit index={idx} governance={governance} />
+      case Instructions.WithdrawFromVolt:
+        return <FriktionWithdraw index={idx} governance={governance} />
       case Instructions.CreateSolendObligationAccount:
         return <CreateObligationAccount index={idx} governance={governance} />
       case Instructions.InitSolendObligationAccount:
@@ -310,6 +332,33 @@ const New = () => {
             governance={governance}
           />
         )
+      case Instructions.Mint:
+        return <Mint index={idx} governance={governance}></Mint>
+      case Instructions.Base64:
+        return <CustomBase64 index={idx} governance={governance}></CustomBase64>
+      case Instructions.CreateNftPluginRegistrar:
+        return (
+          <CreateNftPluginRegistrar
+            index={idx}
+            governance={governance}
+          ></CreateNftPluginRegistrar>
+        )
+      case Instructions.ConfigureNftPluginCollection:
+        return (
+          <ConfigureNftPluginCollection
+            index={idx}
+            governance={governance}
+          ></ConfigureNftPluginCollection>
+        )
+      case Instructions.CreateNftPluginMaxVoterWeight:
+        return (
+          <CreateNftPluginMaxVoterWeightRecord
+            index={idx}
+            governance={governance}
+          ></CreateNftPluginMaxVoterWeightRecord>
+        )
+      case Instructions.None:
+        return <Empty index={idx} governance={governance}></Empty>
       case Instructions.MangoAddOracle:
         return (
           <MakeAddOracle index={idx} governance={governance}></MakeAddOracle>
@@ -356,10 +405,19 @@ const New = () => {
             governance={governance}
           ></MakeCreatePerpMarket>
         )
+      case Instructions.RealmConfig:
+        return <RealmConfig index={idx} governance={governance}></RealmConfig>
       case Instructions.Grant:
         return <Grant index={idx} governance={governance}></Grant>
       case Instructions.Clawback:
         return <Clawback index={idx} governance={governance}></Clawback>
+      case Instructions.CloseTokenAccount:
+        return (
+          <CloseTokenAccount
+            index={idx}
+            governance={governance}
+          ></CloseTokenAccount>
+        )
       default:
         null
     }
@@ -431,11 +489,10 @@ const New = () => {
                 setGovernance,
               }}
             >
-              <h2>Instructions</h2>
+              <h2>Transactions</h2>
               {instructionsData.map((instruction, idx) => {
-                const availableInstructionsForIdx = getAvailableInstructionsForIndex(
-                  idx
-                )
+                const availableInstructionsForIdx =
+                  getAvailableInstructionsForIndex(idx)
                 return (
                   <div
                     key={idx}
@@ -449,7 +506,7 @@ const New = () => {
                           ? 'Select instruction'
                           : 'No available instructions'
                       }`}
-                      label={`Instruction ${idx + 1}`}
+                      label={`Transaction ${idx + 1}`}
                       onChange={(value) => setInstructionType({ value, idx })}
                       value={instruction.type?.name}
                     >
@@ -489,7 +546,7 @@ const New = () => {
                 onClick={addInstruction}
               >
                 <PlusCircleIcon className="h-5 mr-1.5 text-green w-5" />
-                Add instruction
+                Add transaction
               </LinkButton>
             </div>
             <div className="border-t border-fgd-4 flex justify-end mt-6 pt-6 space-x-4">
@@ -511,7 +568,7 @@ const New = () => {
           </div>
         </>
       </div>
-      <div className="col-span-12 md:col-span-5 lg:col-span-4">
+      <div className="col-span-12 md:col-span-5 lg:col-span-4 space-y-4">
         <TokenBalanceCardWrapper />
       </div>
     </div>

@@ -14,19 +14,22 @@ import tokenService from '@utils/services/token'
 import LockTokensModal from './LockTokensModal'
 import { useState } from 'react'
 import {
+  getFormattedStringFromDays,
   getMinDurationFmt,
   getTimeLeftFromNowFmt,
+  SECS_PER_DAY,
 } from 'VoteStakeRegistry/tools/dateTools'
 import { closeDeposit } from 'VoteStakeRegistry/actions/closeDeposit'
 import { abbreviateAddress } from '@utils/formatting'
 import { notify } from '@utils/notifications'
-import useVoteStakeRegistryClientStore from 'VoteStakeRegistry/stores/voteStakeRegistryClientStore'
+import useVotePluginsClientStore from 'stores/useVotePluginsClientStore'
 import dayjs from 'dayjs'
+import { BN } from '@project-serum/anchor'
 
 const DepositCard = ({ deposit }: { deposit: DepositWithMintAccount }) => {
   const { getOwnedDeposits } = useDepositStore()
   const { realm, realmInfo, tokenRecords, ownTokenRecord } = useRealm()
-  const client = useVoteStakeRegistryClientStore((s) => s.state.client)
+  const client = useVotePluginsClientStore((s) => s.state.vsrClient)
   const wallet = useWalletStore((s) => s.current)
   const connection = useWalletStore((s) => s.connection.current)
   const endpoint = useWalletStore((s) => s.connection.endpoint)
@@ -64,8 +67,8 @@ const DepositCard = ({ deposit }: { deposit: DepositWithMintAccount }) => {
       amount: depositEntry.available,
       communityMintPk: realm!.account.communityMint,
       closeDepositAfterOperation: depositEntry.currentlyLocked.isZero(),
-      tokenOwnerRecordPubKey: tokenRecords[wallet!.publicKey!.toBase58()]
-        .pubkey!,
+      tokenOwnerRecordPubKey:
+        tokenRecords[wallet!.publicKey!.toBase58()].pubkey!,
       depositIndex: depositEntry.index,
       client: client,
     })
@@ -149,6 +152,10 @@ const DepositCard = ({ deposit }: { deposit: DepositWithMintAccount }) => {
             label="Lockup Type"
             value={typeName.charAt(0).toUpperCase() + typeName.slice(1)}
           />
+          <CardLabel
+            label="Allow dao to clawback"
+            value={deposit.allowClawback ? 'Yes' : 'No'}
+          />
           {isVest && (
             <CardLabel
               label="Initial Amount"
@@ -166,16 +173,18 @@ const DepositCard = ({ deposit }: { deposit: DepositWithMintAccount }) => {
                 `${getMintDecimalAmount(
                   deposit.mint.account,
                   deposit.vestingRate
-                ).toFormat(2)}p/mo`
+                ).toFormat(0)} p/mo`
               }
             />
           )}
           {isVest && deposit.nextVestingTimestamp !== null && (
             <CardLabel
-              label="Next Vesting"
-              value={dayjs(
-                deposit.nextVestingTimestamp?.toNumber() * 1000
-              ).format('DD-MM-YYYY')}
+              label="Next Vesting in"
+              value={getFormattedStringFromDays(
+                deposit!.nextVestingTimestamp
+                  .sub(new BN(dayjs().unix()))
+                  .toNumber() / SECS_PER_DAY
+              )}
             />
           )}
           {isRealmCommunityMint && (

@@ -12,7 +12,6 @@ import {
 import { PublicKey } from '@solana/web3.js'
 import Input from '@components/inputs/Input'
 import Select from '@components/inputs/Select'
-import useGovernedMultiTypeAccounts from '@hooks/useGovernedMultiTypeAccounts'
 import useRealm from '@hooks/useRealm'
 import SolendConfiguration from '@tools/sdk/solend/configuration'
 import { depositReserveLiquidityAndObligationCollateral } from '@tools/sdk/solend/depositReserveLiquidityAndObligationCollateral'
@@ -24,6 +23,7 @@ import {
 import useWalletStore from 'stores/useWalletStore'
 import { NewProposalContext } from '../../../new'
 import GovernedAccountSelect from '../../GovernedAccountSelect'
+import useGovernanceAssets from '@hooks/useGovernanceAssets'
 
 const DepositReserveLiquidityAndObligationCollateral = ({
   index,
@@ -36,7 +36,7 @@ const DepositReserveLiquidityAndObligationCollateral = ({
   const wallet = useWalletStore((s) => s.current)
   const { realmInfo } = useRealm()
 
-  const { governedMultiTypeAccounts } = useGovernedMultiTypeAccounts()
+  const { assetAccounts } = useGovernanceAssets()
   // Hardcoded gate used to be clear about what cluster is supported for now
   if (connection.cluster !== 'mainnet') {
     return <>This instruction does not support {connection.cluster}</>
@@ -44,12 +44,10 @@ const DepositReserveLiquidityAndObligationCollateral = ({
 
   const shouldBeGoverned = index !== 0 && governance
   const programId: PublicKey | undefined = realmInfo?.programId
-  const [
-    form,
-    setForm,
-  ] = useState<DepositReserveLiquidityAndObligationCollateralForm>({
-    uiAmount: '0',
-  })
+  const [form, setForm] =
+    useState<DepositReserveLiquidityAndObligationCollateralForm>({
+      uiAmount: '0',
+    })
   const [formErrors, setFormErrors] = useState({})
   const { handleSetInstructions } = useContext(NewProposalContext)
 
@@ -135,7 +133,7 @@ const DepositReserveLiquidityAndObligationCollateral = ({
     <>
       <GovernedAccountSelect
         label="Governance"
-        governedAccounts={governedMultiTypeAccounts}
+        governedAccounts={assetAccounts}
         onChange={(value) => {
           handleSetForm({ value, propertyName: 'governedAccount' })
         }}

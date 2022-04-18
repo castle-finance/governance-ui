@@ -18,6 +18,11 @@ import Tooltip from '@components/Tooltip'
 import { getProgramVersionForRealm } from '@models/registry/api'
 import { notify } from '@utils/notifications'
 import { InstructionOption } from '@components/InstructionOptions'
+import dayjs from 'dayjs'
+import {
+  getFormattedStringFromDays,
+  SECS_PER_DAY,
+} from 'VoteStakeRegistry/tools/dateTools'
 
 export enum PlayState {
   Played,
@@ -42,7 +47,7 @@ export function ExecuteInstructionButton({
   const { realmInfo } = useRealm()
   const wallet = useWalletStore((s) => s.current)
   const connection = useWalletStore((s) => s.connection)
-  const fetchRealm = useWalletStore((s) => s.actions.fetchRealm)
+  const refetchProposals = useWalletStore((s) => s.actions.refetchProposals)
   const connected = useWalletStore((s) => s.connected)
   // const instructionOption = useWalletStore((s) => s.instructionOption)
   const [currentSlot, setCurrentSlot] = useState(0)
@@ -89,7 +94,7 @@ export function ExecuteInstructionButton({
         proposalInstruction,
         instructionOption
       )
-      await fetchRealm(realmInfo?.programId, realmInfo?.realmId)
+      await refetchProposals()
     } catch (error) {
       notify({ type: 'error', message: `error executing instruction ${error}` })
       console.log('error executing instruction', error)
@@ -130,7 +135,19 @@ export function ExecuteInstructionButton({
     proposalInstruction.account.executionStatus !==
       InstructionExecutionStatus.Error
   ) {
-    return (
+    const timeLeftToExectue =
+      (proposal.account.votingCompletedAt &&
+        dayjs
+          .unix(proposal.account.votingCompletedAt.toNumber())
+          .add(proposalInstruction.account.holdUpTime, 'second')
+          .unix() - dayjs().unix()) ||
+      0
+    return timeLeftToExectue > 0 ? (
+      <Button small disabled={true} onClick={onExecuteInstruction}>
+        Can execute in{' '}
+        {getFormattedStringFromDays(timeLeftToExectue / SECS_PER_DAY)}
+      </Button>
+    ) : (
       <Button small disabled={!connected} onClick={onExecuteInstruction}>
         Execute
       </Button>

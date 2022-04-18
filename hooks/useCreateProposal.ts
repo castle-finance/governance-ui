@@ -4,20 +4,19 @@ import {
   InstructionDataWithHoldUpTime,
 } from 'actions/createProposal'
 import useWalletStore from 'stores/useWalletStore'
-import useVoteStakeRegistryClientStore from 'VoteStakeRegistry/stores/voteStakeRegistryClientStore'
+import useVotePluginsClientStore from 'stores/useVotePluginsClientStore'
 import useRealm from './useRealm'
 import useRpcContext from './useRpcContext'
 
 export default function useCreateProposal() {
-  const client = useVoteStakeRegistryClientStore((s) => s.state.client)
-  const { fetchRealmGovernance } = useWalletStore((s) => s.actions)
-  const {
-    realm,
-    ownVoterWeight,
-    mint,
-    councilMint,
-    canChooseWhoVote,
-  } = useRealm()
+  const client = useVotePluginsClientStore(
+    (s) => s.state.currentRealmVotingClient
+  )
+  const { fetchRealmGovernance, refetchProposals } = useWalletStore(
+    (s) => s.actions
+  )
+  const { realm, ownVoterWeight, mint, councilMint, canChooseWhoVote } =
+    useRealm()
   const { getRpcContext } = useRpcContext()
   const handleCreateProposal = async ({
     title,
@@ -37,11 +36,14 @@ export default function useCreateProposal() {
     const ownTokenRecord = ownVoterWeight.getTokenRecordToCreateProposal(
       governance!.account.config
     )
-    const defaultProposalMint = !mint?.supply.isZero()
-      ? realm!.account.communityMint
-      : !councilMint?.supply.isZero()
-      ? realm!.account.config.councilMint
-      : undefined
+
+    const defaultProposalMint =
+      !mint?.supply.isZero() ||
+      realm?.account.config.useMaxCommunityVoterWeightAddin
+        ? realm!.account.communityMint
+        : !councilMint?.supply.isZero()
+        ? realm!.account.config.councilMint
+        : undefined
 
     const proposalMint =
       canChooseWhoVote && voteByCouncil
@@ -56,7 +58,7 @@ export default function useCreateProposal() {
     const selectedGovernance = (await fetchRealmGovernance(
       governance?.pubkey
     )) as ProgramAccount<Governance>
-    return await createProposal(
+    const proposalAddress = await createProposal(
       rpcContext,
       realm!,
       selectedGovernance.pubkey,
@@ -69,6 +71,8 @@ export default function useCreateProposal() {
       isDraft,
       client
     )
+    await refetchProposals()
+    return proposalAddress
   }
   return { handleCreateProposal }
 }

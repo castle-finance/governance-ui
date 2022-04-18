@@ -12,31 +12,43 @@ import Footer from '@components/Footer'
 import { useEffect } from 'react'
 import useDepositStore from 'VoteStakeRegistry/stores/useDepositStore'
 import useWalletStore from 'stores/useWalletStore'
-import { useVoteRegistry } from 'VoteStakeRegistry/hooks/useVoteRegistry'
+import { useVotingPlugins, vsrPluginsPks } from '@hooks/useVotingPlugins'
 import ErrorBoundary from '@components/ErrorBoundary'
 import { WalletIdentityProvider } from '@cardinal/namespaces-components'
-import useVoteStakeRegistryClientStore from 'VoteStakeRegistry/stores/voteStakeRegistryClientStore'
+import useVotePluginsClientStore from 'stores/useVotePluginsClientStore'
 import useMarketStore from 'Strategies/store/marketStore'
 import handleGovernanceAssetsStore from '@hooks/handleGovernanceAssetsStore'
 import tokenService from '@utils/services/token'
+import useGovernanceAssets from '@hooks/useGovernanceAssets'
+import { usePrevious } from '@hooks/usePrevious'
+import useTreasuryAccountStore from 'stores/useTreasuryAccountStore'
+import useMembers from '@components/Members/useMembers'
 
 function App({ Component, pageProps }) {
   useHydrateStore()
   useWallet()
   handleRouterHistory()
-  useVoteRegistry()
+  useVotingPlugins()
   handleGovernanceAssetsStore()
+  useMembers()
   useEffect(() => {
     tokenService.fetchSolanaTokenList()
   }, [])
   const { loadMarket } = useMarketStore()
+  const { governedTokenAccounts } = useGovernanceAssets()
+  const possibleNftsAccounts = governedTokenAccounts.filter(
+    (x) => x.isSol || x.isNft
+  )
+  const { getNfts } = useTreasuryAccountStore()
   const { getOwnedDeposits, resetDepositState } = useDepositStore()
-  const { realm, realmInfo, symbol, ownTokenRecord } = useRealm()
+  const { realm, realmInfo, symbol, ownTokenRecord, config } = useRealm()
   const wallet = useWalletStore((s) => s.current)
   const connection = useWalletStore((s) => s.connection)
-  const client = useVoteStakeRegistryClientStore((s) => s.state.client)
+  const client = useVotePluginsClientStore((s) => s.state.vsrClient)
   const realmName = realmInfo?.displayName ?? realm?.account?.name
-
+  const prevStringifyPossibleNftsAccounts = usePrevious(
+    JSON.stringify(possibleNftsAccounts)
+  )
   const title = realmName ? `${realmName}` : 'Solana Governance'
 
   // Note: ?v==${Date.now()} is added to the url to force favicon refresh.
@@ -47,11 +59,17 @@ function App({ Component, pageProps }) {
     faviconSelector as string
   )}/favicon.ico?v=${Date.now()}`
   useEffect(() => {
-    loadMarket(connection, connection.cluster)
-  }, [connection.cluster])
+    if (realm?.pubkey) {
+      loadMarket(connection, connection.cluster)
+    }
+  }, [connection.cluster, realm?.pubkey.toBase58()])
   useEffect(() => {
     if (
-      realm?.account.config.useCommunityVoterWeightAddin &&
+      realm &&
+      config?.account.communityVoterWeightAddin &&
+      vsrPluginsPks.includes(
+        config.account.communityVoterWeightAddin.toBase58()
+      ) &&
       realm.pubkey &&
       wallet?.connected &&
       client
@@ -72,7 +90,7 @@ function App({ Component, pageProps }) {
     wallet?.connected,
     client,
   ])
-  //remove Do not add <script> tags using next/head warning
+  //hack to remove 'Do not add <script> tags using next/head warning'
   useEffect(() => {
     const changeFavicon = (link) => {
       let $favicon = document.querySelector('link[rel="icon"]')
@@ -92,15 +110,24 @@ function App({ Component, pageProps }) {
       }
     }
     changeFavicon(faviconUrl)
-  }, [faviconUrl])
+  }, [faviconSelector])
   useEffect(() => {
-    console.log(title)
     document.title = title
   }, [title])
+  useEffect(() => {
+    if (
+      prevStringifyPossibleNftsAccounts !==
+        JSON.stringify(possibleNftsAccounts) &&
+      realm?.pubkey
+    ) {
+      getNfts(possibleNftsAccounts, connection.current)
+    }
+  }, [JSON.stringify(possibleNftsAccounts), realm?.pubkey.toBase58()])
+
   return (
     <div className="relative">
       <ErrorBoundary>
-        <ThemeProvider defaultTheme="Mango">
+        <ThemeProvider defaultTheme="Dark">
           <WalletIdentityProvider appName={'Realms'}>
             <NavBar />
             <Notifications />

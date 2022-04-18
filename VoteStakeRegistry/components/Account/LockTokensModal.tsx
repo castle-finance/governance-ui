@@ -37,11 +37,12 @@ import {
   vestingPeriods,
 } from 'VoteStakeRegistry/tools/types'
 import BigNumber from 'bignumber.js'
-import useVoteStakeRegistryClientStore from 'VoteStakeRegistry/stores/voteStakeRegistryClientStore'
+import useVotePluginsClientStore from 'stores/useVotePluginsClientStore'
 import { calcMintMultiplier } from 'VoteStakeRegistry/tools/deposits'
 import ButtonGroup from '@components/ButtonGroup'
 import InlineNotification from '@components/InlineNotification'
 import Tooltip from '@components/Tooltip'
+import Switch from '@components/Switch'
 
 const YES = 'Yes'
 const NO = 'No'
@@ -57,9 +58,9 @@ const LockTokensModal = ({
 }) => {
   const { getOwnedDeposits } = useDepositStore()
   const { mint, realm, realmTokenAccount, realmInfo, tokenRecords } = useRealm()
-  const client = useVoteStakeRegistryClientStore((s) => s.state.client)
-  const communityMintRegistrar = useVoteStakeRegistryClientStore(
-    (s) => s.state.communityMintRegistrar
+  const client = useVotePluginsClientStore((s) => s.state.vsrClient)
+  const voteStakeRegistryRegistrar = useVotePluginsClientStore(
+    (s) => s.state.voteStakeRegistryRegistrar
   )
   const connection = useWalletStore((s) => s.connection.current)
   const endpoint = useWalletStore((s) => s.connection.endpoint)
@@ -107,7 +108,7 @@ const LockTokensModal = ({
     })
   const maxMultiplier = calcMintMultiplier(
     maxNonCustomDaysLockup * SECS_PER_DAY,
-    communityMintRegistrar,
+    voteStakeRegistryRegistrar,
     realm
   )
 
@@ -117,11 +118,11 @@ const LockTokensModal = ({
       x.lockup.kind.none
   )
   const [lockupPeriodDays, setLockupPeriodDays] = useState<number>(0)
+  const [allowClawback, setAllowClawback] = useState(false)
   const [lockupPeriod, setLockupPeriod] = useState<Period>(lockupPeriods[0])
   const [amount, setAmount] = useState<number | undefined>()
-  const [lockMoreThenDeposited, setLockMoreThenDeposited] = useState<string>(
-    YES
-  )
+  const [lockMoreThenDeposited, setLockMoreThenDeposited] =
+    useState<string>(YES)
   const [lockupType, setLockupType] = useState<LockupKind>(lockupTypes[0])
   const [
     vestingPeriod,
@@ -181,7 +182,7 @@ const LockTokensModal = ({
     : ''
   const currentMultiplier = calcMintMultiplier(
     lockupPeriodDays * SECS_PER_DAY,
-    communityMintRegistrar,
+    voteStakeRegistryRegistrar,
     realm
   )
   const currentPercentOfMaxMultiplier =
@@ -216,9 +217,8 @@ const LockTokensModal = ({
     )
     const totalAmountInDeposit =
       depositRecord?.amountDepositedNative || new BN(0)
-    const whatWillBeLeftInsideDeposit = totalAmountInDeposit.sub(
-      totalAmountToLock
-    )
+    const whatWillBeLeftInsideDeposit =
+      totalAmountInDeposit.sub(totalAmountToLock)
     const amountFromDeposit = whatWillBeLeftInsideDeposit.isNeg()
       ? totalAmountInDeposit
       : totalAmountToLock
@@ -234,6 +234,7 @@ const LockTokensModal = ({
       lockupKind: lockupType.value,
       sourceDepositIdx: depositRecord!.index,
       sourceTokenAccount: realmTokenAccount!.publicKey,
+      allowClawback: allowClawback,
       tokenOwnerRecordPk:
         tokenRecords[wallet!.publicKey!.toBase58()]?.pubkey || null,
       client: client,
@@ -268,9 +269,8 @@ const LockTokensModal = ({
 
     const totalAmountInDeposit = depositToUnlock.currentlyLocked
 
-    const whatWillBeLeftInsideDeposit = totalAmountInDeposit.sub(
-      totalAmountToUnlock
-    )
+    const whatWillBeLeftInsideDeposit =
+      totalAmountInDeposit.sub(totalAmountToUnlock)
 
     await voteRegistryStartUnlock({
       rpcContext,
@@ -334,10 +334,14 @@ const LockTokensModal = ({
                     onChange={(type) =>
                       setLockupType(
                         //@ts-ignore
-                        lockupTypes.find((t) => t.displayName === type)
+                        lockupTypes
+                          .filter((x) => x.value !== MONTHLY)
+                          .find((t) => t.displayName === type)
                       )
                     }
-                    values={lockupTypes.map((type) => type.displayName)}
+                    values={lockupTypes
+                      .filter((x) => x.value !== MONTHLY)
+                      .map((type) => type.displayName)}
                   />
                 </div>
               </>
@@ -455,11 +459,24 @@ const LockTokensModal = ({
                   {currentMultiplier}x
                 </span>
               </div>
-              <div className="w-full h-2 bg-bkg-1 rounded-lg">
+              <div className="w-full h-2 bg-bkg-1 rounded-lg mb-4">
                 <div
                   style={{ width: `${currentPercentOfMaxMultiplier}%` }}
                   className="bg-primary-light h-2 rounded-lg"
                 ></div>
+              </div>
+              <div className="flex text-sm text-fgd-2">
+                <div className="pr-5">
+                  Allow dao to clawback -{' '}
+                  <small>
+                    It will give ability to propose clawback of your locked
+                    tokens to any given address
+                  </small>
+                </div>
+                <Switch
+                  checked={allowClawback}
+                  onChange={(checked) => setAllowClawback(checked)}
+                />
               </div>
             </div>
           </>
@@ -496,7 +513,7 @@ const LockTokensModal = ({
   }, [lockMoreThenDeposited])
   useEffect(() => {
     setLockupPeriod(lockupPeriods[0])
-  }, [communityMintRegistrar])
+  }, [voteStakeRegistryRegistrar])
   useEffect(() => {
     if (depositToUnlock) {
       goToStep(0)

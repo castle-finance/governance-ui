@@ -126,6 +126,25 @@ export const calcMultiplier = ({
   lockupSecs: number
   lockupSaturationSecs: number
 }) => {
+  //   if (isVested) {
+  //     const onMonthSecs = SECS_PER_DAY * DAYS_PER_MONTH
+  //     const n_periods_before_saturation = lockupSaturationSecs / onMonthSecs
+  //     const n_periods = lockupSecs / onMonthSecs
+  //     const n_unsaturated_periods = Math.min(
+  //       n_periods,
+  //       n_periods_before_saturation
+  //     )
+  //     const n_saturated_periods = Math.max(0, n_periods - n_unsaturated_periods)
+  //     const calc =
+  //       (depositScaledFactor +
+  //         (maxExtraLockupVoteWeightScaledFactor / n_periods) *
+  //           (n_saturated_periods +
+  //             ((n_unsaturated_periods + 1) * n_unsaturated_periods) /
+  //               2 /
+  //               n_periods_before_saturation)) /
+  //       depositScaledFactor
+  //     return depositScaledFactor !== 0 ? calc : 0
+  //   }
   const calc =
     (depositScaledFactor +
       (maxExtraLockupVoteWeightScaledFactor *
@@ -173,12 +192,14 @@ export const calcMintMultiplier = (
       maxExtraLockupVoteWeightScaledFactor,
     } = mintCfg
     const depositScaledFactorNum = baselineVoteWeightScaledFactor.toNumber()
-    const maxExtraLockupVoteWeightScaledFactorNum = maxExtraLockupVoteWeightScaledFactor.toNumber()
+    const maxExtraLockupVoteWeightScaledFactorNum =
+      maxExtraLockupVoteWeightScaledFactor.toNumber()
     const lockupSaturationSecsNum = lockupSaturationSecs.toNumber()
     //(deposit_scaled_factor + max_extra_lockup_vote_weight_scaled_factor * min(lockup_secs, lockup_saturation_secs) / lockup_saturation_secs) / deposit_scaled_factor
     const calced = calcMultiplier({
       depositScaledFactor: depositScaledFactorNum,
-      maxExtraLockupVoteWeightScaledFactor: maxExtraLockupVoteWeightScaledFactorNum,
+      maxExtraLockupVoteWeightScaledFactor:
+        maxExtraLockupVoteWeightScaledFactorNum,
       lockupSaturationSecs: lockupSaturationSecsNum,
       lockupSecs,
     })

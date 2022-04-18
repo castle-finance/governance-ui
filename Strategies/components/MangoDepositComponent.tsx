@@ -26,14 +26,13 @@ import {
 } from '@tools/sdk/units'
 import { abbreviateAddress, precision } from '@utils/formatting'
 import tokenService from '@utils/services/token'
-import { GovernedTokenAccount } from '@utils/tokens'
 import BigNumber from 'bignumber.js'
 import { useRouter } from 'next/router'
 import { useEffect, useState } from 'react'
 import useWalletStore from 'stores/useWalletStore'
 import useMarketStore, { MarketStore } from 'Strategies/store/marketStore'
 import { HandleCreateProposalWithStrategy } from 'Strategies/types/types'
-import useVoteStakeRegistryClientStore from 'VoteStakeRegistry/stores/voteStakeRegistryClientStore'
+import useVotePluginsClientStore from 'stores/useVotePluginsClientStore'
 import ButtonGroup from '@components/ButtonGroup'
 import Switch from '@components/Switch'
 import Select from '@components/inputs/Select'
@@ -43,6 +42,7 @@ import AdditionalProposalOptions from '@components/AdditionalProposalOptions'
 import { validateInstruction } from '@utils/instructionTools'
 import * as yup from 'yup'
 import { getValidatedPublickKey } from '@utils/validations'
+import { AssetAccount } from '@utils/uiTypes/assets'
 
 const DEPOSIT = 'Deposit'
 const CREATE_REF_LINK = 'Create Referral Link'
@@ -59,7 +59,7 @@ const MangoDepositComponent = ({
   currentPositionFtm: string
   createProposalFcn: HandleCreateProposalWithStrategy
   mangoAccounts: MangoAccount[]
-  governedTokenAccount: GovernedTokenAccount
+  governedTokenAccount: AssetAccount
 }) => {
   const router = useRouter()
   const { fmtUrlWithCluster } = useQueryContext()
@@ -73,23 +73,23 @@ const MangoDepositComponent = ({
     symbol,
   } = useRealm()
   const [isDepositing, setIsDepositing] = useState(false)
-  const [
-    selectedMangoAccount,
-    setSelectedMangoAccount,
-  ] = useState<MangoAccount | null>(
-    mangoAccounts.length ? mangoAccounts[0] : null
-  )
+  const [selectedMangoAccount, setSelectedMangoAccount] =
+    useState<MangoAccount | null>(
+      mangoAccounts.length ? mangoAccounts[0] : null
+    )
   const [voteByCouncil, setVoteByCouncil] = useState(false)
-  const client = useVoteStakeRegistryClientStore((s) => s.state.client)
+  const client = useVotePluginsClientStore(
+    (s) => s.state.currentRealmVotingClient
+  )
   const market = useMarketStore((s) => s)
   const connection = useWalletStore((s) => s.connection)
   const wallet = useWalletStore((s) => s.current)
   const tokenInfo = tokenService.getTokenInfo(handledMint)
   const { canUseTransferInstruction } = useGovernanceAssets()
-  const treasuryAmount = governedTokenAccount?.token
-    ? governedTokenAccount.token.account.amount
+  const treasuryAmount = governedTokenAccount.extensions?.token
+    ? governedTokenAccount.extensions.token.account.amount
     : new BN(0)
-  const mintInfo = governedTokenAccount?.mint?.account
+  const mintInfo = governedTokenAccount.extensions?.mint?.account
   const [form, setForm] = useState({
     title: '',
     description: '',
@@ -99,8 +99,9 @@ const MangoDepositComponent = ({
   })
   const [formErrors, setFormErrors] = useState({})
   const proposalTitle = `Deposit ${form.amount} ${
-    tokenService.getTokenInfo(governedTokenAccount.mint!.publicKey.toBase58())
-      ?.symbol || 'tokens'
+    tokenService.getTokenInfo(
+      governedTokenAccount.extensions.mint!.publicKey.toBase58()
+    )?.symbol || 'tokens'
   } to Mango account`
   const handleSetForm = ({ propertyName, value }) => {
     setFormErrors({})
@@ -158,9 +159,10 @@ const MangoDepositComponent = ({
       )
     }
 
-    const minRentAmount = await connection.current.getMinimumBalanceForRentExemption(
-      MangoAccountLayout.span
-    )
+    const minRentAmount =
+      await connection.current.getMinimumBalanceForRentExemption(
+        MangoAccountLayout.span
+      )
 
     const transferIx = SystemProgram.transfer({
       fromPubkey: wallet!.publicKey!,
@@ -192,7 +194,7 @@ const MangoDepositComponent = ({
       )
       const mintAmount = parseMintNaturalAmountFromDecimal(
         form.amount!,
-        governedTokenAccount!.mint!.account.decimals
+        governedTokenAccount.extensions!.mint!.account.decimals
       )
       const ownTokenRecord = ownVoterWeight.getTokenRecordToCreateProposal(
         governedTokenAccount!.governance!.account.config
@@ -204,6 +206,7 @@ const MangoDepositComponent = ({
         : !councilMint?.supply.isZero()
         ? realm!.account.config.councilMint
         : undefined
+
       const proposalAddress = await createProposalFcn(
         rpcContext,
         handledMint,

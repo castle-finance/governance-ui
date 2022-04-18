@@ -39,10 +39,8 @@ export default function InstructionCard({
   proposal: ProgramAccount<Proposal>
   proposalInstruction: ProgramAccount<ProposalTransaction>
 }) {
-  const {
-    nftsGovernedTokenAccounts,
-    governedTokenAccountsWithoutNfts,
-  } = useGovernanceAssets()
+  const { nftsGovernedTokenAccounts, governedTokenAccountsWithoutNfts } =
+    useGovernanceAssets()
   const connection = useWalletStore((s) => s.connection)
   const tokenRecords = useWalletStore((s) => s.selectedRealm)
   const [descriptor, setDescriptor] = useState<InstructionDescriptor>()
@@ -61,23 +59,25 @@ export default function InstructionCard({
 
   useEffect(() => {
     getInstructionDescriptor(
-      connection.current,
+      connection,
       proposalInstruction.account.getSingleInstruction()
     ).then((d) => setDescriptor(d))
     const getAmountImg = async () => {
-      const sourcePk = proposalInstruction.account.getSingleInstruction()
-        .accounts[0].pubkey
+      const sourcePk =
+        proposalInstruction.account.getSingleInstruction().accounts[0].pubkey
       const tokenAccount = await tryGetTokenAccount(
         connection.current,
         sourcePk
       )
       const isSol = governedTokenAccountsWithoutNfts.find(
-        (x) => x.transferAddress?.toBase58() === sourcePk.toBase58()
+        (x) => x.extensions.transferAddress?.toBase58() === sourcePk.toBase58()
       )?.isSol
       const isNFTAccount = nftsGovernedTokenAccounts.find(
         (x) =>
-          x.governance?.pubkey.toBase58() ===
-          tokenAccount?.account.owner.toBase58()
+          x.extensions.transferAddress?.toBase58() ===
+            tokenAccount?.account.owner.toBase58() ||
+          x.governance.pubkey.toBase58() ===
+            tokenAccount?.account.owner.toBase58()
       )
       if (isNFTAccount) {
         const mint = tokenAccount?.account.mint

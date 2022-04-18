@@ -12,29 +12,29 @@ import { PublicKey } from '@solana/web3.js'
 import Loading from '@components/Loading'
 import { getNfts } from '@utils/tokens'
 import ImgWithLoader from '@components/ImgWithLoader'
-
 export interface NftSelectorFunctions {
   handleGetNfts: () => void
 }
 
 function NFTSelector(
   {
-    ownerPk,
+    ownersPk,
     onNftSelect,
     nftWidth = '150px',
     nftHeight = '150px',
     selectable = true,
-    familyName = '',
+    predefinedNfts,
   }: {
-    ownerPk: PublicKey
+    ownersPk: PublicKey[]
     onNftSelect: (nfts: NFTWithMint[]) => void
     nftWidth?: string
     nftHeight?: string
     selectable?: boolean
-    familyName?: string
+    predefinedNfts?: NFTWithMint[]
   },
   ref: React.Ref<NftSelectorFunctions>
 ) {
+  const isPredefinedMode = typeof predefinedNfts !== 'undefined'
   const [nfts, setNfts] = useState<NFTWithMint[]>([])
   const [selectedNfts, setSelectedNfts] = useState<NFTWithMint[]>([])
   const connection = useWalletStore((s) => s.connection)
@@ -50,9 +50,14 @@ function NFTSelector(
   }
   const handleGetNfts = async () => {
     setIsLoading(true)
-    const nfts = await getNfts(connection.current, ownerPk)
+    const response = await Promise.all(
+      ownersPk.map((x) => getNfts(connection.current, x))
+    )
+    const nfts = response.flatMap((x) => x)
     if (nfts.length === 1) {
       handleSelectNft(nfts[0])
+    } else {
+      setSelectedNfts([])
     }
     setNfts(nfts)
     setIsLoading(false)
@@ -62,13 +67,20 @@ function NFTSelector(
   }))
 
   useEffect(() => {
-    if (ownerPk) {
+    if (ownersPk.length && !isPredefinedMode) {
       handleGetNfts()
     }
-  }, [ownerPk])
+  }, [ownersPk.length])
   useEffect(() => {
-    onNftSelect(selectedNfts)
+    if (!isPredefinedMode) {
+      onNftSelect(selectedNfts)
+    }
   }, [selectedNfts])
+  useEffect(() => {
+    if (predefinedNfts && isPredefinedMode) {
+      setNfts(predefinedNfts)
+    }
+  }, [predefinedNfts])
   return (
     <>
       <div
@@ -78,37 +90,30 @@ function NFTSelector(
         {!isLoading ? (
           nfts.length ? (
             <div className="flex flex-row flex-wrap gap-4 mb-4">
-              {nfts
-                .filter(
-                  (x) => !familyName || x.val.collection.family === familyName
-                )
-                .map((x) => (
-                  <div
-                    onClick={() => (selectable ? handleSelectNft(x) : null)}
-                    key={x.mint}
-                    className={`bg-bkg-2 flex items-center justify-center cursor-pointer default-transition rounded-lg border border-transparent ${
-                      selectable ? 'hover:border-primary-dark' : ''
-                    } relative overflow-hidden`}
-                    style={{
-                      width: nftWidth,
-                      height: nftHeight,
-                    }}
-                  >
-                    {selectedNfts.find(
-                      (selectedNfts) => selectedNfts.mint === x.mint
-                    ) && (
-                      <CheckCircleIcon className="w-10 h-10 absolute text-green z-10"></CheckCircleIcon>
-                    )}
-                    <ImgWithLoader
-                      style={{ width: '150px' }}
-                      src={x.val.image}
-                    />
-                  </div>
-                ))}
+              {nfts.map((x) => (
+                <div
+                  onClick={() => (selectable ? handleSelectNft(x) : null)}
+                  key={x.mint}
+                  className={`bg-bkg-2 flex items-center justify-center cursor-pointer default-transition rounded-lg border border-transparent ${
+                    selectable ? 'hover:border-primary-dark' : ''
+                  } relative overflow-hidden`}
+                  style={{
+                    width: nftWidth,
+                    height: nftHeight,
+                  }}
+                >
+                  {selectedNfts.find(
+                    (selectedNfts) => selectedNfts.mint === x.mint
+                  ) && (
+                    <CheckCircleIcon className="w-10 h-10 absolute text-green z-10"></CheckCircleIcon>
+                  )}
+                  <ImgWithLoader style={{ width: '150px' }} src={x.val.image} />
+                </div>
+              ))}
             </div>
           ) : (
             <div className="text-fgd-3 flex flex-col items-center">
-              {"Connected wallet doesn't have any NFTs"}
+              {"Account doesn't have any NFTs"}
               <PhotographIcon className="opacity-5 w-56 h-56"></PhotographIcon>
             </div>
           )

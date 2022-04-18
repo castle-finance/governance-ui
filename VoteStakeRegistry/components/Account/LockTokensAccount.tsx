@@ -20,7 +20,7 @@ import { getDeposits } from 'VoteStakeRegistry/tools/deposits'
 import { DepositWithMintAccount } from 'VoteStakeRegistry/sdk/accounts'
 import useDepositStore from 'VoteStakeRegistry/stores/useDepositStore'
 import { notify } from '@utils/notifications'
-import useVoteStakeRegistryClientStore from 'VoteStakeRegistry/stores/voteStakeRegistryClientStore'
+import useVotePluginsClientStore from 'stores/useVotePluginsClientStore'
 import { getTokenOwnerRecordAddress } from '@solana/spl-governance'
 import InlineNotification from '@components/InlineNotification'
 import {
@@ -31,6 +31,7 @@ import {
 import { getMintMetadata } from '@components/instructions/programs/splToken'
 import Account from './Account'
 import { abbreviateAddress } from '@utils/formatting'
+
 interface DepositBox {
   mintPk: PublicKey
   mint: MintInfo
@@ -42,7 +43,7 @@ const unlockedTypes = ['none']
 const LockTokensAccount = ({ tokenOwnerRecordPk }) => {
   const { realm, realmInfo, mint, tokenRecords, councilMint } = useRealm()
   const [isLockModalOpen, setIsLockModalOpen] = useState(false)
-  const client = useVoteStakeRegistryClientStore((s) => s.state.client)
+  const client = useVotePluginsClientStore((s) => s.state.vsrClient)
   const [reducedDeposits, setReducedDeposits] = useState<DepositBox[]>([])
   const ownDeposits = useDepositStore((s) => s.state.deposits)
   const [deposits, setDeposits] = useState<DepositWithMintAccount[]>([])
@@ -78,19 +79,16 @@ const LockTokensAccount = ({ tokenOwnerRecordPk }) => {
         wallet?.publicKey &&
         client
       ) {
-        const {
-          deposits,
-          votingPower,
-          votingPowerFromDeposits,
-        } = await getDeposits({
-          realmPk: realm!.pubkey,
-          communityMintPk: realm!.account.communityMint,
-          walletPk: tokenOwnerRecordWalletPk
-            ? new PublicKey(tokenOwnerRecordWalletPk)
-            : wallet.publicKey,
-          client: client!,
-          connection: connection,
-        })
+        const { deposits, votingPower, votingPowerFromDeposits } =
+          await getDeposits({
+            realmPk: realm!.pubkey,
+            communityMintPk: realm!.account.communityMint,
+            walletPk: tokenOwnerRecordWalletPk
+              ? new PublicKey(tokenOwnerRecordWalletPk)
+              : wallet.publicKey,
+            client: client!,
+            connection: connection,
+          })
         const reducedDeposits = deposits.reduce((curr, next) => {
           const nextType = Object.keys(next.lockup.kind)[0]
           const isUnlockedType = unlockedTypes.includes(nextType)

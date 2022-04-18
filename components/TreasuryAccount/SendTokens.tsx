@@ -31,10 +31,8 @@ import tokenService from '@utils/services/token'
 import BigNumber from 'bignumber.js'
 import { getInstructionDataFromBase64 } from '@solana/spl-governance'
 import useQueryContext from '@hooks/useQueryContext'
-import { RpcContext } from '@solana/spl-governance'
 import { Governance } from '@solana/spl-governance'
 import { ProgramAccount } from '@solana/spl-governance'
-import { createProposal } from 'actions/createProposal'
 import { useRouter } from 'next/router'
 import { notify } from '@utils/notifications'
 import Textarea from '@components/inputs/Textarea'
@@ -50,25 +48,19 @@ import {
 import VoteBySwitch from 'pages/dao/[symbol]/proposal/components/VoteBySwitch'
 import NFTSelector from '@components/NFTS/NFTSelector'
 import { NFTWithMint } from '@utils/uiTypes/nfts'
-import { getProgramVersionForRealm } from '@models/registry/api'
-import useVoteStakeRegistryClientStore from 'VoteStakeRegistry/stores/voteStakeRegistryClientStore'
+import useCreateProposal from '@hooks/useCreateProposal'
+import NFTAccountSelect from './NFTAccountSelect'
 
-const SendTokens = () => {
+const SendTokens = ({ isNft = false }) => {
   const currentAccount = useTreasuryAccountStore((s) => s.currentAccount)
   const connection = useWalletStore((s) => s.connection)
-  const {
-    realmInfo,
-    symbol,
-    realm,
-    ownVoterWeight,
-    mint,
-    councilMint,
-    canChooseWhoVote,
-  } = useRealm()
-  const client = useVoteStakeRegistryClientStore((s) => s.state.client)
+  const { nftsGovernedTokenAccounts } = useGovernanceAssets()
+  const { setCurrentAccount } = useTreasuryAccountStore()
+  const { realmInfo, symbol, realm, canChooseWhoVote } = useRealm()
+  const { handleCreateProposal } = useCreateProposal()
   const { canUseTransferInstruction } = useGovernanceAssets()
   const tokenInfo = useTreasuryAccountStore((s) => s.tokenInfo)
-  const isNFT = currentAccount?.isNft
+  const isNFT = isNft || currentAccount?.isNft
   const isSol = currentAccount?.isSol
   const { fmtUrlWithCluster } = useQueryContext()
   const wallet = useWalletStore((s) => s.current)
@@ -87,17 +79,17 @@ const SendTokens = () => {
   const [selectedNfts, setSelectedNfts] = useState<NFTWithMint[]>([])
   const [voteByCouncil, setVoteByCouncil] = useState(false)
   const [showOptions, setShowOptions] = useState(false)
-  const [
-    destinationAccount,
-    setDestinationAccount,
-  ] = useState<TokenProgramAccount<AccountInfo> | null>(null)
+  const [destinationAccount, setDestinationAccount] =
+    useState<TokenProgramAccount<AccountInfo> | null>(null)
   const [isLoading, setIsLoading] = useState(false)
   const [formErrors, setFormErrors] = useState({})
   const destinationAccountName =
     destinationAccount?.publicKey &&
     getAccountName(destinationAccount?.account.address)
-  const mintMinAmount = form.governedTokenAccount?.mint
-    ? getMintMinAmountAsDecimal(form.governedTokenAccount.mint.account)
+  const mintMinAmount = form.governedTokenAccount?.extensions?.mint
+    ? getMintMinAmountAsDecimal(
+        form.governedTokenAccount.extensions.mint.account
+      )
     : 1
   const currentPrecision = precision(mintMinAmount)
 
@@ -125,22 +117,9 @@ const SendTokens = () => {
       propertyName: 'amount',
     })
   }
-  //   const setMaxAmount = () => {
-  //     const amount =
-  //       currentAccount && currentAccount.mint?.account
-  //         ? getMintDecimalAmountFromNatural(
-  //             currentAccount.mint?.account,
-  //             new BN(currentAccount.token!.account.amount)
-  //           ).toNumber()
-  //         : 0
-  //     handleSetForm({
-  //       value: amount,
-  //       propertyName: 'amount',
-  //     })
-  //   }
   const calcTransactionDolarAmount = (amount) => {
     const price = tokenService.getUSDTokenPrice(
-      currentAccount!.mint!.publicKey.toBase58()
+      currentAccount!.extensions.mint!.publicKey.toBase58()
     )
     const totalPrice = amount * price
     const totalPriceFormatted =
@@ -157,7 +136,6 @@ const SendTokens = () => {
       connection,
       wallet,
       currentAccount,
-
       setFormErrors,
     }
     if (isNFT) {
@@ -181,14 +159,6 @@ const SendTokens = () => {
         setIsLoading(false)
         throw 'No realm selected'
       }
-
-      const rpcContext = new RpcContext(
-        new PublicKey(realm.owner.toString()),
-        getProgramVersionForRealm(realmInfo!),
-        wallet!,
-        connection.current,
-        connection.endpoint
-      )
       const instructionData = {
         data: instruction.serializedInstruction
           ? getInstructionDataFromBase64(instruction.serializedInstruction)
@@ -201,41 +171,13 @@ const SendTokens = () => {
         const selectedGovernance = (await fetchRealmGovernance(
           governance?.pubkey
         )) as ProgramAccount<Governance>
-
-        const ownTokenRecord = ownVoterWeight.getTokenRecordToCreateProposal(
-          governance!.account.config
-        )
-
-        const defaultProposalMint = !mint?.supply.isZero()
-          ? realm.account.communityMint
-          : !councilMint?.supply.isZero()
-          ? realm.account.config.councilMint
-          : undefined
-
-        const proposalMint =
-          canChooseWhoVote && voteByCouncil
-            ? realm.account.config.councilMint
-            : defaultProposalMint
-
-        if (!proposalMint) {
-          throw new Error(
-            'There is no suitable governing token for the proposal'
-          )
-        }
-        //Description same as title
-        proposalAddress = await createProposal(
-          rpcContext,
-          realm,
-          selectedGovernance.pubkey,
-          ownTokenRecord.pubkey,
-          form.title ? form.title : proposalTitle,
-          form.description ? form.description : '',
-          proposalMint,
-          selectedGovernance?.account?.proposalCount,
-          [instructionData],
-          false,
-          client
-        )
+        proposalAddress = await handleCreateProposal({
+          title: form.title ? form.title : proposalTitle,
+          description: form.description ? form.description : '',
+          voteByCouncil,
+          instructionsData: [instructionData],
+          governance: selectedGovernance!,
+        })
         const url = fmtUrlWithCluster(
           `/dao/${symbol}/proposal/${proposalAddress}`
         )
@@ -249,15 +191,15 @@ const SendTokens = () => {
   const IsAmountNotHigherThenBalance = () => {
     const mintValue = getMintNaturalAmountFromDecimalAsBN(
       form.amount!,
-      form.governedTokenAccount!.mint!.account.decimals
+      form.governedTokenAccount!.extensions.mint!.account.decimals
     )
     let gte: boolean | undefined = false
     try {
-      gte = form.governedTokenAccount?.token?.account?.amount?.gte(mintValue)
+      gte = form.governedTokenAccount!.extensions.amount?.gte(mintValue)
     } catch (e) {
       //silent fail
     }
-    return form.governedTokenAccount?.token?.publicKey && gte
+    return gte
   }
 
   useEffect(() => {
@@ -284,11 +226,13 @@ const SendTokens = () => {
     }
   }, [form.destinationAccount])
 
-  const schema = getTokenTransferSchema({ form, connection })
+  const schema = getTokenTransferSchema({ form, connection, nftMode: isNft })
   const transactionDolarAmount = calcTransactionDolarAmount(form.amount)
   const nftName = selectedNfts[0]?.val?.name
   const nftTitle = `Send ${nftName ? nftName : 'NFT'} to ${
-    form.destinationAccount
+    tryParseKey(form.destinationAccount)
+      ? abbreviateAddress(new PublicKey(form.destinationAccount))
+      : ''
   }`
   const proposalTitle = isNFT
     ? nftTitle
@@ -306,10 +250,18 @@ const SendTokens = () => {
     <>
       <h3 className="mb-4 flex items-center">
         <>
-          Send {tokenInfo && tokenInfo?.symbol} {isNFT && 'NFT'}
+          Send {!isNft && tokenInfo && tokenInfo?.symbol} {isNFT && 'NFT'}
         </>
       </h3>
-      <AccountLabel></AccountLabel>
+      {isNFT ? (
+        <NFTAccountSelect
+          onChange={(value) => setCurrentAccount(value, connection)}
+          currentAccount={currentAccount}
+          nftsGovernedTokenAccounts={nftsGovernedTokenAccounts}
+        ></NFTAccountSelect>
+      ) : (
+        <AccountLabel></AccountLabel>
+      )}
       <div className="space-y-4 w-full pb-4">
         <Input
           label="Destination account"
@@ -341,7 +293,14 @@ const SendTokens = () => {
         {isNFT ? (
           <NFTSelector
             onNftSelect={(nfts) => setSelectedNfts(nfts)}
-            ownerPk={currentAccount.governance!.pubkey}
+            ownersPk={
+              currentAccount.isSol
+                ? [
+                    currentAccount.extensions.transferAddress!,
+                    currentAccount.governance.pubkey,
+                  ]
+                : [currentAccount.governance.pubkey]
+            }
           ></NFTSelector>
         ) : (
           <Input
@@ -357,7 +316,7 @@ const SendTokens = () => {
           />
         )}
         <small className="text-red">
-          {transactionDolarAmount
+          {transactionDolarAmount && !isNft
             ? IsAmountNotHigherThenBalance()
               ? `~$${transactionDolarAmount}`
               : 'Insufficient balance'
