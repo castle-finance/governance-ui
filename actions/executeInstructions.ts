@@ -10,11 +10,7 @@ import {
 } from '@solana/spl-governance'
 import { NATIVE_MINT } from '@solana/spl-token'
 import { PublicKey, Transaction, TransactionInstruction } from '@solana/web3.js'
-import {
-  sendSignedTransaction,
-  signTransaction,
-  signTransactions,
-} from '@utils/send'
+import { sendSignedTransaction, signTransaction } from '@utils/send'
 
 // Merge instructions within one Transaction, sign it and execute it
 export const executeInstructions = async (
