@@ -24,7 +24,6 @@ export interface UiInstruction {
   chunkSplitByDefault?: boolean
   signers?: Keypair[]
   shouldSplitIntoSeparateTxs?: boolean | undefined
-  nonSplGovIx?: TransactionInstruction | undefined
 }
 export interface SplTokenTransferForm {
   destinationAccount: string

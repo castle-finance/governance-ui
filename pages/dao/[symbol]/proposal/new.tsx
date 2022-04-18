@@ -58,7 +58,6 @@ import MakeChangeSpotMarket from './components/instructions/Mango/MakeChangeSpot
 import MakeCreatePerpMarket from './components/instructions/Mango/MakeCreatePerpMarket'
 import useCreateProposal from '@hooks/useCreateProposal'
 import CastleDeposit from './components/instructions/Castle/CastleDeposit'
-import { InstructionDataWithHoldUpTime } from 'actions/createProposal'
 
 const schema = yup.object().shape({
   title: yup.string().required('Title is required'),
@@ -214,7 +213,6 @@ const New = () => {
           chunkSplitByDefault: x.chunkSplitByDefault || false,
           signers: x.signers,
           shouldSplitIntoSeparateTxs: x.shouldSplitIntoSeparateTxs,
-          nonSplGovIx: x.nonSplGovIx,
         }
       })
 
@@ -280,10 +278,16 @@ const New = () => {
         return (
           <CreateAssociatedTokenAccount index={idx} governance={governance} />
         )
-      case Instructions.DepositIntoVolt:
-        return <FriktionDeposit index={idx} governance={governance} />
+      case Instructions.Mint:
+        return <Mint index={idx} governance={governance}></Mint>
+      case Instructions.Base64:
+        return <CustomBase64 index={idx} governance={governance}></CustomBase64>
+      case Instructions.None:
+        return <Empty index={idx} governance={governance}></Empty>
       case Instructions.DepositIntoCastle:
         return <CastleDeposit index={idx} governance={governance} />
+      case Instructions.DepositIntoVolt:
+        return <FriktionDeposit index={idx} governance={governance} />
       case Instructions.CreateSolendObligationAccount:
         return <CreateObligationAccount index={idx} governance={governance} />
       case Instructions.InitSolendObligationAccount:
@@ -306,12 +310,6 @@ const New = () => {
             governance={governance}
           />
         )
-      case Instructions.Mint:
-        return <Mint index={idx} governance={governance}></Mint>
-      case Instructions.Base64:
-        return <CustomBase64 index={idx} governance={governance}></CustomBase64>
-      case Instructions.None:
-        return <Empty index={idx} governance={governance}></Empty>
       case Instructions.MangoAddOracle:
         return (
           <MakeAddOracle index={idx} governance={governance}></MakeAddOracle>

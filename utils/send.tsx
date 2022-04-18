@@ -228,38 +228,32 @@ export async function sendSignedAndAdjacentTransactions({
   successMessage?: string
   timeout?: number
 }): Promise<string> {
-  // debugger
-  console.log('raw tx')
+  notify({ message: sendingMessage })
 
+  // Serialize both transactions
   const rawTransaction = signedTransaction.serialize()
   const rawAdjTransaction = adjacentTransaction.serialize()
-  console.log('raw tx', rawTransaction)
 
-  const startTime = getUnixTs()
-
-  notify({ message: sendingMessage })
-  console.log('notify')
-
+  // Send both transactions at the same time
   const [txid, adjTxId]: TransactionSignature[] = await Promise.all([
-    connection.sendRawTransaction(rawTransaction, {
-      skipPreflight: true,
-    }),
     connection.sendRawTransaction(rawAdjTransaction, {
       skipPreflight: true,
     }),
+    connection.sendRawTransaction(rawTransaction, {
+      skipPreflight: true,
+    }),
   ])
-  console.log('notify2')
+  console.log('txids', txid, adjTxId)
 
-  console.log('Started awaiting confirmation for', txid)
-
+  // Retry mechanism
   let done = false
-
+  const startTime = getUnixTs()
+  console.log('Started awaiting confirmation for', txid)
   ;(async () => {
     while (!done && getUnixTs() - startTime < timeout) {
       connection.sendRawTransaction(rawTransaction, {
         skipPreflight: true,
       })
-
       await sleep(3000)
     }
   })()
@@ -269,8 +263,8 @@ export async function sendSignedAndAdjacentTransactions({
 
     console.log(
       'calling signatures confirmation',
-      await awaitTransactionSignatureConfirmation(txid, timeout, connection),
-      await awaitTransactionSignatureConfirmation(adjTxId, timeout, connection)
+      await awaitTransactionSignatureConfirmation(adjTxId, timeout, connection),
+      await awaitTransactionSignatureConfirmation(txid, timeout, connection)
     )
   } catch (err) {
     if (err.timeout) {
@@ -279,7 +273,7 @@ export async function sendSignedAndAdjacentTransactions({
 
     let simulateResult: SimulatedTransactionResponse | null = null
 
-    console.log('sined transaction', signedTransaction)
+    console.log('signed transaction', signedTransaction)
 
     // Simulate failed transaction to parse out an error reason
     try {
@@ -312,7 +306,7 @@ export async function sendSignedAndAdjacentTransactions({
       throw new TransactionError(JSON.stringify(simulateResult.err), txid)
     }
 
-    console.log('transaction error lasdkasdn')
+    console.log('transaction error')
 
     throw new TransactionError('Transaction failed', txid)
   } finally {

@@ -3,7 +3,6 @@ import Input from '@components/inputs/Input'
 import useRealm from '@hooks/useRealm'
 import { getMintMinAmountAsDecimal } from '@tools/sdk/units'
 import { PublicKey } from '@solana/web3.js'
-// import * as anchor from '@project-serum/anchor'
 import { precision } from '@utils/formatting'
 import useWalletStore from 'stores/useWalletStore'
 import { GovernedMultiTypeAccount } from '@utils/tokens'
@@ -19,8 +18,6 @@ import { ProgramAccount } from '@solana/spl-governance'
 import GovernedAccountSelect from '../../GovernedAccountSelect'
 import { getCastleDepositInstruction } from '@utils/instructionTools'
 import Select from '@components/inputs/Select'
-// import { VaultClient } from '@castlefinance/vault-sdk'
-// import { FriktionSnapshot, VoltSnapshot } from '@friktion-labs/friktion-sdk'
 
 // // // //
 // TODO - Pull from config
@@ -128,18 +125,13 @@ const CastleDeposit = ({
     return ix
   }
 
-  // TODO - where are we doing to pull this metadata from?
+  // Grab Castle vault information from config server
   useEffect(() => {
-    // const connection = useWalletStore((s) => s.connection)
-    // const wallet = useWalletStore((s) => s.current)
-
-    // Grab Castle configs from our config service.
     const getCastleConfig = async () => {
       const response = await fetch('https://configs-api.vercel.app/api/configs')
       const castleVaults = (await response.json()) as VaultConfig[]
       setCastleVaults(castleVaults)
     }
-
     getCastleConfig()
   }, [])
 

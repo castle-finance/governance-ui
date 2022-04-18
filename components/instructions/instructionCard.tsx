@@ -1,5 +1,5 @@
 import { PublicKey } from '@solana/web3.js'
-import { CheckIcon, ExternalLinkIcon } from '@heroicons/react/outline'
+import { ExternalLinkIcon } from '@heroicons/react/outline'
 import {
   AccountMetaData,
   Proposal,
@@ -11,7 +11,7 @@ import {
   InstructionDescriptor,
   WSOL_MINT,
 } from './tools'
-import React, { Fragment, useEffect, useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import useWalletStore from '../../stores/useWalletStore'
 import { getExplorerUrl } from '../explorer/tools'
 import { getProgramName } from './programs/names'
@@ -25,16 +25,10 @@ import axios from 'axios'
 import { notify } from '@utils/notifications'
 import useGovernanceAssets from '@hooks/useGovernanceAssets'
 import tokenService from '@utils/services/token'
-import { Listbox } from '@headlessui/react'
-import InstructionOptions from '@components/InstructionOptions'
-
-const people = [
-  { id: 1, name: 'Durward Reynolds' },
-  { id: 2, name: 'Kenton Towne' },
-  { id: 3, name: 'Therese Wunsch' },
-  { id: 4, name: 'Benedict Kessler' },
-  { id: 5, name: 'Katelyn Rohan' },
-]
+import InstructionOptionInput, {
+  InstructionOption,
+  InstructionOptions,
+} from '@components/InstructionOptions'
 
 export default function InstructionCard({
   index,
@@ -52,15 +46,19 @@ export default function InstructionCard({
   const connection = useWalletStore((s) => s.connection)
   const tokenRecords = useWalletStore((s) => s.selectedRealm)
   const [descriptor, setDescriptor] = useState<InstructionDescriptor>()
-  const [selectedPerson, setSelectedPerson] = useState(people[0])
+  const [instructionOption, setInstructionOption] = useState<InstructionOption>(
+    InstructionOptions.none
+  )
 
   const [playing, setPlaying] = useState(
     proposalInstruction.account.executedAt
       ? PlayState.Played
       : PlayState.Unplayed
   )
+  // // // TODO - put instruction option state here
   const [nftImgUrl, setNftImgUrl] = useState('')
   const [tokenImgUrl, setTokenImgUrl] = useState('')
+
   useEffect(() => {
     getInstructionDescriptor(
       connection.current,
@@ -185,8 +183,12 @@ export default function InstructionCard({
               proposalInstruction={proposalInstruction}
               playing={playing}
               setPlaying={setPlaying}
+              instructionOption={instructionOption}
             />
-            <InstructionOptions />
+            <InstructionOptionInput
+              value={instructionOption}
+              setValue={setInstructionOption}
+            />
           </React.Fragment>
         )}
       </div>

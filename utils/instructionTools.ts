@@ -252,8 +252,6 @@ export async function getCastleDepositInstruction({
 
   const signers: Keypair[] = []
 
-  let nonSplGovIx: TransactionInstruction | undefined = undefined
-
   if (
     isValid &&
     amount &&
@@ -284,14 +282,12 @@ export async function getCastleDepositInstruction({
     )
 
     console.log('cas: vaultClient', vaultClient)
-    const { depositIxs, refreshIx, wSolSigner } = await vaultClient.depositIxs(
+    const { depositIxs, wSolSigner } = await vaultClient.depositIxs(
       // @ts-ignore - TODO: dont do this
       (wallet as unknown) as AnchorWallet,
       1,
       governedTokenAccount.governance.pubkey // TODO - use governedTokenAccount.governance.pubkey
     )
-
-    nonSplGovIx = refreshIx
 
     // Grab last ix to be primarily displayed
     const lastIx = depositIxs.splice(-1)[0]
@@ -302,11 +298,6 @@ export async function getCastleDepositInstruction({
 
     // Add signer
     signers.push(wSolSigner)
-
-    // console.log('cas: prerequisiteInstructions', depositIxs, lastIx)
-    // console.log('cas: lastIx', lastIx)
-    // console.log('cas: refreshIx', refreshIx)
-    // console.log('cas: signers', signers)
 
     // // // // //
   }
@@ -319,7 +310,6 @@ export async function getCastleDepositInstruction({
     prerequisiteInstructions: prerequisiteInstructions,
     signers,
     shouldSplitIntoSeparateTxs: false,
-    nonSplGovIx,
   }
   console.log('cas: obj', obj)
 

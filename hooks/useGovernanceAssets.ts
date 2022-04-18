@@ -202,15 +202,15 @@ export default function useGovernanceAssets() {
       isVisible: canUseAnyInstruction,
     },
     {
+      id: Instructions.DepositIntoCastle,
+      name: 'Castle: Deposit into Vault',
+      isVisible: true, // TODO - remove hardcoded "true", replace with canUseAnyInstruction
+      // isVisible: canUseAnyInstruction,
+    },
+    {
       id: Instructions.DepositIntoVolt,
       name: 'Friktion: Deposit into Volt',
       isVisible: canUseAnyInstruction,
-    },
-    {
-      id: Instructions.DepositIntoCastle,
-      name: 'Castle Finance: Deposit into Vault',
-      isVisible: true, // TODO - remove hardcoded "true", replace with canUseAnyInstruction
-      // isVisible: canUseAnyInstruction,
     },
     {
       id: Instructions.CreateSolendObligationAccount,

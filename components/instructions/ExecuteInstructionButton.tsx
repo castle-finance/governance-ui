@@ -1,4 +1,4 @@
-import { Fragment, useEffect, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { executeTransaction } from 'actions/executeTransaction'
 import {
   InstructionExecutionStatus,
@@ -7,12 +7,7 @@ import {
   ProposalState,
 } from '@solana/spl-governance'
 import React from 'react'
-import {
-  CheckCircleIcon,
-  CheckIcon,
-  PlayIcon,
-  RefreshIcon,
-} from '@heroicons/react/solid'
+import { CheckCircleIcon, PlayIcon, RefreshIcon } from '@heroicons/react/solid'
 import Button from '@components/Button'
 import { RpcContext } from '@solana/spl-governance'
 import useRealm from '@hooks/useRealm'
@@ -22,15 +17,7 @@ import { PublicKey } from '@solana/web3.js'
 import Tooltip from '@components/Tooltip'
 import { getProgramVersionForRealm } from '@models/registry/api'
 import { notify } from '@utils/notifications'
-import { Listbox } from '@headlessui/react'
-
-const people = [
-  { id: 1, name: 'Durward Reynolds' },
-  { id: 2, name: 'Kenton Towne' },
-  { id: 3, name: 'Therese Wunsch' },
-  { id: 4, name: 'Benedict Kessler' },
-  { id: 5, name: 'Katelyn Rohan' },
-]
+import { InstructionOption } from '@components/InstructionOptions'
 
 export enum PlayState {
   Played,
@@ -44,20 +31,26 @@ export function ExecuteInstructionButton({
   playing,
   setPlaying,
   proposalInstruction,
+  instructionOption,
 }: {
   proposal: ProgramAccount<Proposal>
   proposalInstruction: ProgramAccount<ProposalTransaction>
   playing: PlayState
   setPlaying: React.Dispatch<React.SetStateAction<PlayState>>
+  instructionOption: InstructionOption
 }) {
   const { realmInfo } = useRealm()
   const wallet = useWalletStore((s) => s.current)
   const connection = useWalletStore((s) => s.connection)
   const fetchRealm = useWalletStore((s) => s.actions.fetchRealm)
   const connected = useWalletStore((s) => s.connected)
-  const [selectedPerson, setSelectedPerson] = useState(people[0])
-
+  // const instructionOption = useWalletStore((s) => s.instructionOption)
   const [currentSlot, setCurrentSlot] = useState(0)
+
+  // console.log(
+  //   'proposalInstruction.account.instructionIndex',
+  //   proposalInstruction.account.instructionIndex
+  // )
 
   const canExecuteAt = proposal?.account.votingCompletedAt
     ? proposal.account.votingCompletedAt.toNumber() + 1
@@ -89,7 +82,13 @@ export function ExecuteInstructionButton({
     setPlaying(PlayState.Playing)
 
     try {
-      await executeTransaction(rpcContext, proposal, proposalInstruction)
+      console.log('executing transaction! with ', instructionOption)
+      await executeTransaction(
+        rpcContext,
+        proposal,
+        proposalInstruction,
+        instructionOption
+      )
       await fetchRealm(realmInfo?.programId, realmInfo?.realmId)
     } catch (error) {
       notify({ type: 'error', message: `error executing instruction ${error}` })
