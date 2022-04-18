@@ -82,7 +82,7 @@ const executeWithRefresh = async (
 ) => {
   const refreshIx = await getCastleRefreshInstruction({
     connection,
-    wallet: (wallet as unknown) as WalletAdapter,
+    wallet: wallet as unknown as WalletAdapter,
   })
   const refreshTx = new Transaction().add(refreshIx)
 
