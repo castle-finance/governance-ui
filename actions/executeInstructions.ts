@@ -41,10 +41,14 @@ export const executeInstructions = async (
 
   // // // // Insert adjacent transaction here
 
-  const provider = new Provider(connection, wallet as unknown as AnchorWallet, {
-    preflightCommitment: 'confirmed',
-    commitment: 'confirmed',
-  })
+  const provider = new Provider(
+    connection,
+    (wallet as unknown) as AnchorWallet,
+    {
+      preflightCommitment: 'confirmed',
+      commitment: 'confirmed',
+    }
+  )
 
   // Loads up lending markets and ensures up-to-date
   const vaultClient = await VaultClient.load(

@@ -36,10 +36,9 @@ export default function useWallet() {
     }
   }, [selectedProviderUrl, savedProviderUrl])
 
-  const provider = useMemo(
-    () => getWalletProviderByUrl(selectedProviderUrl),
-    [selectedProviderUrl]
-  )
+  const provider = useMemo(() => getWalletProviderByUrl(selectedProviderUrl), [
+    selectedProviderUrl,
+  ])
 
   // save selection in local storage
   useEffect(() => {

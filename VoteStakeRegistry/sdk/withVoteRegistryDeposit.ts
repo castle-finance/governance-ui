@@ -37,19 +37,23 @@ export const withVoteRegistryDeposit = async ({
     throw 'no vote registry plugin'
   }
 
-  const { depositIdx, voter, registrar, voterATAPk } =
-    await withCreateNewDeposit({
-      instructions,
-      walletPk,
-      mintPk,
-      realmPk,
-      programId,
-      tokenOwnerRecordPk,
-      lockUpPeriodInDays,
-      lockupKind,
-      communityMintPk,
-      client,
-    })
+  const {
+    depositIdx,
+    voter,
+    registrar,
+    voterATAPk,
+  } = await withCreateNewDeposit({
+    instructions,
+    walletPk,
+    mintPk,
+    realmPk,
+    programId,
+    tokenOwnerRecordPk,
+    lockUpPeriodInDays,
+    lockupKind,
+    communityMintPk,
+    client,
+  })
   const depositInstruction = client?.program.instruction.deposit(
     depositIdx,
     amount,
