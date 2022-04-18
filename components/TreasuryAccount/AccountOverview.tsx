@@ -68,8 +68,10 @@ const AccountOverview = () => {
     TreasuryStrategy[]
   >([])
   const [showStrategies, setShowStrategies] = useState(false)
-  const [proposedInvestment, setProposedInvestment] =
-    useState<TreasuryStrategy | null>(null)
+  const [
+    proposedInvestment,
+    setProposedInvestment,
+  ] = useState<TreasuryStrategy | null>(null)
   const [isCopied, setIsCopied] = useState<boolean>(false)
 
   useEffect(() => {

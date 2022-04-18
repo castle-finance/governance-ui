@@ -127,13 +127,15 @@ export class VotingClient {
         realm.account.communityMint,
         this.client!.program.programId
       )
-      const { voterWeightPk, maxVoterWeightRecord } =
-        await this._withHandleNftVoterWeight(
-          realm,
-          walletPk,
-          clientProgramId,
-          instructions
-        )
+      const {
+        voterWeightPk,
+        maxVoterWeightRecord,
+      } = await this._withHandleNftVoterWeight(
+        realm,
+        walletPk,
+        clientProgramId,
+        instructions
+      )
       const remainingAccounts: AccountData[] = []
       for (let i = 0; i < this.votingNfts.length; i++) {
         const nft = this.votingNfts[i]
@@ -174,13 +176,15 @@ export class VotingClient {
         realm.account.communityMint,
         this.client!.program.programId
       )
-      const { voterWeightPk, maxVoterWeightRecord } =
-        await this._withHandleNftVoterWeight(
-          realm!,
-          walletPk,
-          clientProgramId,
-          instructions
-        )
+      const {
+        voterWeightPk,
+        maxVoterWeightRecord,
+      } = await this._withHandleNftVoterWeight(
+        realm!,
+        walletPk,
+        clientProgramId,
+        instructions
+      )
       const remainingAccounts: {
         pubkey: PublicKey
         isSigner: boolean
@@ -241,13 +245,15 @@ export class VotingClient {
         realm.account.communityMint,
         this.client!.program.programId
       )
-      const { voterWeightPk, maxVoterWeightRecord } =
-        await this._withHandleNftVoterWeight(
-          realm!,
-          walletPk,
-          clientProgramId,
-          instructions
-        )
+      const {
+        voterWeightPk,
+        maxVoterWeightRecord,
+      } = await this._withHandleNftVoterWeight(
+        realm!,
+        walletPk,
+        clientProgramId,
+        instructions
+      )
       const remainingAccounts: {
         pubkey: PublicKey
         isSigner: boolean
@@ -293,20 +299,24 @@ export class VotingClient {
     }
     // let isExisting: any = undefined
     // const client = this.client as NftVoterClient
-    const { voterWeightPk, voterWeightRecordBump } =
-      await getNftVoterWeightRecord(
-        realm!.pubkey,
-        realm!.account.communityMint,
-        walletPk!,
-        clientProgramId
-      )
+    const {
+      voterWeightPk,
+      voterWeightRecordBump,
+    } = await getNftVoterWeightRecord(
+      realm!.pubkey,
+      realm!.account.communityMint,
+      walletPk!,
+      clientProgramId
+    )
 
-    const { maxVoterWeightRecord, maxVoterWeightRecordBump } =
-      await getNftMaxVoterWeightRecord(
-        realm!.pubkey,
-        realm!.account.communityMint,
-        clientProgramId
-      )
+    const {
+      maxVoterWeightRecord,
+      maxVoterWeightRecordBump,
+    } = await getNftMaxVoterWeightRecord(
+      realm!.pubkey,
+      realm!.account.communityMint,
+      clientProgramId
+    )
 
     // try {
     //   isExisting = await client.program.account.voterWeightRecord.fetch(

@@ -26,8 +26,12 @@ const VotePanel = () => {
   )
   const router = useRouter()
   const { pk } = router.query
-  const { governance, proposal, voteRecordsByVoter, tokenType } =
-    useWalletStore((s) => s.selectedProposal)
+  const {
+    governance,
+    proposal,
+    voteRecordsByVoter,
+    tokenType,
+  } = useWalletStore((s) => s.selectedProposal)
   const {
     ownTokenRecord,
     ownCouncilTokenRecord,

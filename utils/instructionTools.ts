@@ -87,7 +87,7 @@ export async function getFriktionDepositInstruction({
     const sdk = new FriktionSDK({
       provider: {
         connection: connection.current,
-        wallet: wallet as unknown as AnchorWallet,
+        wallet: (wallet as unknown) as AnchorWallet,
       },
     })
     const cVoltSDK = new ConnectedVoltSDK(
@@ -174,7 +174,7 @@ export async function getFriktionDepositInstruction({
           connection.current,
           governedTokenAccount.extensions.mint!.publicKey,
           TOKEN_PROGRAM_ID,
-          null as unknown as Account
+          (null as unknown) as Account
         ).getMintInfo()
         decimals = underlyingAssetMintInfo.decimals
       }
@@ -264,7 +264,7 @@ export async function getCastleDepositInstruction({
     // Logs destination VaultID
     const provider = new Provider(
       connection.current,
-      wallet as unknown as AnchorWallet,
+      (wallet as unknown) as AnchorWallet,
       {
         preflightCommitment: 'confirmed',
         commitment: 'confirmed',
@@ -282,7 +282,7 @@ export async function getCastleDepositInstruction({
     console.log('cas: vaultClient', vaultClient)
     const { depositIxs, wSolSigner } = await vaultClient.depositIxs(
       // @ts-ignore - TODO: dont do this
-      wallet as unknown as AnchorWallet,
+      (wallet as unknown) as AnchorWallet,
       1,
       governedTokenAccount.governance.pubkey // TODO - use governedTokenAccount.governance.pubkey
     )
@@ -334,10 +334,14 @@ export async function getCastleRefreshInstruction({
   connection: Connection
   wallet: WalletAdapter | undefined
 }) {
-  const provider = new Provider(connection, wallet as unknown as AnchorWallet, {
-    preflightCommitment: 'confirmed',
-    commitment: 'confirmed',
-  })
+  const provider = new Provider(
+    connection,
+    (wallet as unknown) as AnchorWallet,
+    {
+      preflightCommitment: 'confirmed',
+      commitment: 'confirmed',
+    }
+  )
 
   const vaultClient = await VaultClient.load(
     provider,

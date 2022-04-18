@@ -63,7 +63,7 @@ const useVotePluginsClientStore = create<UseVotePluginsClientStore>(
       const options = Provider.defaultOptions()
       const provider = new Provider(
         connection.current,
-        wallet as unknown as Wallet,
+        (wallet as unknown) as Wallet,
         options
       )
       const vsrClient = await VsrClient.connect(
@@ -90,7 +90,7 @@ const useVotePluginsClientStore = create<UseVotePluginsClientStore>(
       const options = Provider.defaultOptions()
       const provider = new Provider(
         connection.current,
-        wallet as unknown as Wallet,
+        (wallet as unknown) as Wallet,
         options
       )
       const nftClient = await NftVoterClient.connect(
