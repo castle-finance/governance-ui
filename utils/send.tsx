@@ -93,6 +93,8 @@ export async function signTransactions({
   connection: Connection
 }): Promise<Transaction[]> {
   const blockhash = (await connection.getRecentBlockhash('max')).blockhash
+  console.log(blockhash)
+  console.log(transactionsAndSigners)
   transactionsAndSigners.forEach(({ transaction, signers = [] }) => {
     transaction.recentBlockhash = blockhash
     transaction.setSigners(
@@ -104,9 +106,18 @@ export async function signTransactions({
     }
   })
 
-  return await wallet.signAllTransactions(
-    transactionsAndSigners.map(({ transaction }) => transaction)
-  )
+  let signed
+  console.log(transactionsAndSigners)
+
+  try {
+    signed = await wallet.signAllTransactions(
+      transactionsAndSigners.map(({ transaction }) => transaction)
+    )
+  } catch (e) {
+    console.log(e)
+  }
+
+  return signed
 }
 
 export async function sendSignedTransaction({

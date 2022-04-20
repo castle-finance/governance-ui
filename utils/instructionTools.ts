@@ -13,6 +13,7 @@ import {
 import { SignerWalletAdapter, WalletAdapter } from '@solana/wallet-adapter-base'
 import {
   Account,
+  Cluster,
   Connection,
   Keypair,
   PublicKey,
@@ -25,7 +26,7 @@ import {
   getMintNaturalAmountFromDecimal,
   parseMintNaturalAmountFromDecimal,
 } from '@tools/sdk/units'
-import type { ConnectionContext } from 'utils/connection'
+import { ConnectionContext, getNetworkFromEndpoint } from 'utils/connection'
 import { getATA } from './ataTools'
 import { isFormValid } from './formValidation'
 import { getTokenAccountsByMint } from './tokens'
@@ -41,6 +42,8 @@ import { VaultClient } from '@castlefinance/vault-sdk'
 // import { VaultClient } from '@castlefinance/vault-sdk'
 // import * as anchor from '@project-serum/anchor'
 import { AssetAccount } from '@utils/uiTypes/assets'
+import { VaultConfig } from 'pages/dao/[symbol]/proposal/components/instructions/Castle/CastleDeposit'
+import { InstructionOption } from '@components/InstructionOptions'
 
 export const validateInstruction = async ({
   schema,
@@ -271,28 +274,98 @@ export async function getCastleDepositInstruction({
       }
     )
 
-    // Loads up lending markets and ensures up-to-date
-    const vaultClient = await VaultClient.load(
-      provider,
-      'devnet',
-      NATIVE_MINT,
-      new PublicKey('3PUZJamT1LAwgkjT58PHoY8izM1Y8jRz2A1UwiV4JTkk')
+    const vaultId = new PublicKey(
+      '9n6ekjHHgkPB9fVuWHzH6iNuxBxN22hEBryZXYFg6cNk'
+    )
+    const vaultReserveMint = new PublicKey(
+      'So11111111111111111111111111111111111111112'
     )
 
-    console.log('cas: vaultClient', vaultClient)
+    const vaultClient = await VaultClient.load(
+      provider,
+      'devnet', // network,
+      vaultReserveMint,
+      vaultId
+    )
+
+    // Get the LP token account for governance
+    console.log('cas: vaultClient', await vaultClient.getLpTokenMintInfo())
+    console.log(governedTokenAccount)
+
+    // token account pub key
+    console.log(
+      'governedTokenAccount.pubkey.toBase58()',
+      governedTokenAccount.pubkey.toBase58()
+    )
+
+    // token account mint
+    console.log(
+      'governedTokenAccount.extensions.mint.publicKey.toBase58()',
+      governedTokenAccount.extensions.mint.publicKey.toBase58()
+    )
+    console.log(
+      'governedTokenAccount.governance',
+      governedTokenAccount.governance.pubkey.toBase58(),
+      governedTokenAccount.governance.account
+    )
+
+    // const userReserveTokenAccount = await vaultClient.getUserReserveTokenAccount(
+    //   governedTokenAccount.pubkey
+    // )
+    // console.log(userReserveTokenAccount)
+
+    // // Get the LP ATA for the receiver (treasury)
+    // const { currentAddress: receiverAddress, needToCreateAta } = await getATA({
+    //   connection: connection,
+    //   receiverAddress: governedTokenAccount.governance.pubkey,
+    //   mintPK: vaultClient.vaultState.lpTokenMint,
+    //   wallet,
+    // })
+
+    // // Add LP account creation to prerequisite instructions
+    // if (needToCreateAta) {
+    //   prerequisiteInstructions.push(
+    //     Token.createAssociatedTokenAccountInstruction(
+    //       ASSOCIATED_TOKEN_PROGRAM_ID, // always ASSOCIATED_TOKEN_PROGRAM_ID
+    //       TOKEN_PROGRAM_ID, // always TOKEN_PROGRAM_ID
+    //       vaultClient.vaultState.lpTokenMint, // mint
+    //       receiverAddress, // ata
+    //       governedTokenAccount.governance.pubkey, // owner of token account
+    //       wallet.publicKey! // fee payer
+    //     )
+    //   )
+    // }
+
+    // // // //
+    // Loads up lending markets and ensures up-to-date
+    // const vaultClient = await VaultClient.load(
+    //   provider,
+    //   connection.cluster == 'mainnet' ? 'mainnet-beta' : 'devnet',
+    //   // TODO - ENFORCE SOURCE ACCOUNT AND VAULT RESERVE MINT ARE SAME
+    //   governedTokenAccount.extensions.mint.publicKey, //new PublicKey('EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v'),
+    //   new PublicKey(form.castleVaultId) //new PublicKey('EDtqJFHksXpdXLDuxgoYpjpxg3LjBpmW4jh3fkz4SX32')
+    // )
+    // // // // //
+
+    // Load the vault client
+
+    console.log(governedTokenAccount)
+
     const { depositIxs, wSolSigner } = await vaultClient.depositIxs(
       // @ts-ignore - TODO: dont do this
       (wallet as unknown) as AnchorWallet,
       1,
-      governedTokenAccount.governance.pubkey // TODO - use governedTokenAccount.governance.pubkey
+      governedTokenAccount.pubkey // address of spl/sol account
+    )
+    console.log(depositIxs)
+
+    // Add last instruction to be primarily displayed
+    serializedInstruction = serializeInstructionToBase64(
+      depositIxs[depositIxs.length - 1]
     )
 
-    // Grab last ix to be primarily displayed
-    const lastIx = depositIxs.splice(-1)[0]
-    serializedInstruction = serializeInstructionToBase64(lastIx)
-
-    // Add rest of the ixs with last one already removed
-    prerequisiteInstructions.push(...depositIxs)
+    // Add all instructions but the last one
+    prerequisiteInstructions.push(...depositIxs.slice(0, -1))
 
     // Add signer
     signers.push(wSolSigner)
@@ -307,33 +380,26 @@ export async function getCastleDepositInstruction({
     governance: governedTokenAccount?.governance,
     prerequisiteInstructions: prerequisiteInstructions,
     signers,
-    shouldSplitIntoSeparateTxs: false,
+    shouldSplitIntoSeparateTxs: true,
   }
   console.log('cas: obj', obj)
-
-  /**
-   * Notes - max bytes: 1232
-   * - title and description of proposal adds bytes
-   *    - "a": 1824
-   * - deposit ix: 450 bytes https://explorer.solana.com/tx/inspector?signatures=%255B%25221111111111111111111111111111111111111111111111111111111111111111%2522%255D&message=AQAECjv8vgdK3gaQSxuNfKNv09oHS4e8dwdCLmfgBdTc9ov5I3lPdhpReI3O%252BdY5VBoYJ0FLtErTP7Ge1bTN9o8vbymj75nQe4Eut1j%252FBH0TxfDg9HdyykhMJ2%252BKO6DIzBJj0HBdcGDYoqdydCm%252Bwa7tfaQ7GUhNj%252BbL8Fd4zHnh6lXJn%252BKphL%252FMki%252FSA1JxoNwtNe4Agazz1cIIc8%252FrKf2UeRumOiEPJLpTtF9Am%252FDHJhBd0wKXPXAWob2nyhkJLFixdSe0YH7dHFjIPyyeNPH%252BXz7GwL%252B2QUwdlYjRQQmFhW9MBt324ddloZPZy%252BFGzut5rBy0he1fWzeROoz1hX7%252FAKkGp9UXGMd0yShWY5hpHV62i164o5tLbVxzVVshAAAAADnAWWLTJsv%252B55IPLY4JyyP44i6CfmlZIECCQMJDADggmHZXU%252FQZMeLAx6ztUQD8CG5ksQQLYpbEyGgpkAXQrCkBCQkBBgIDBAUABwgQ8iPGiVLh8rYBAAAAAAAAAA%253D%253D&cluster=devnet
-   *    - failed from proposal: 567 bytes (177 bytes more) https://explorer.solana.com/tx/aeLFN6S3r4f2zNnba5fae3P2WjMJBUpHdX7MgoRsazbDGMFT5L4eWmPh27jY4krnTJvZcXKfuxF6AWrdaP6De3r/inspect?cluster=devnet
-   * - refresh simulate: 970 bytes
-   *    - failed from proposal: 1498 bytes
-   * - refresh + deposit: 1798 bytes
-   * - everything: 1832 bytes
-   * - wrap/unwrap: 430 bytes
-   */
 
   return obj
 }
 
-export async function getCastleRefreshInstruction({
-  connection,
-  wallet,
-}: {
-  connection: Connection
-  wallet: WalletAdapter | undefined
-}) {
+/**
+ * Constructs refresh transaction based on network and vault and mint and strategy
+ * @param connection
+ * @param wallet
+ * @param instructionOption
+ * @returns Refresh transaction for the specified mint vault
+ */
+export async function getCastleRefreshInstruction(
+  connection: Connection,
+  wallet: WalletAdapter | undefined,
+  instructionOption: InstructionOption
+) {
+  // Initialize a new provider
   const provider = new Provider(
     connection,
     (wallet as unknown) as AnchorWallet,
@@ -343,20 +409,35 @@ export async function getCastleRefreshInstruction({
     }
   )
 
+  // Look up the current network from the endpoint, checking for '-beta' suffix
+  const network = (getNetworkFromEndpoint(connection.rpcEndpoint) ||
+    'mainnet-beta') as Cluster
+
+  // Load vaults from config api and filter by network
+  const response = await fetch('https://configs-api.vercel.app/api/configs')
+  const vaults = (await response.json())[network] as VaultConfig[]
+
+  // TODO - have instruction option include mint and strategy.
+  // Load the proper vault based on mint
+  const vault = vaults[0]
+
+  console.log('debug', vault)
   const vaultClient = await VaultClient.load(
     provider,
-    // TODO - infer from env
-    'devnet',
-    NATIVE_MINT,
-    new PublicKey('3PUZJamT1LAwgkjT58PHoY8izM1Y8jRz2A1UwiV4JTkk')
+    'devnet', // network,
+    new PublicKey('So11111111111111111111111111111111111111112'),
+    new PublicKey('9n6ekjHHgkPB9fVuWHzH6iNuxBxN22hEBryZXYFg6cNk')
   )
+  // new PublicKey(vault.token_mint),
+  // new PublicKey(vault.vault_id)
+  // new PublicKey('EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v'),
+  // new PublicKey('EDtqJFHksXpdXLDuxgoYpjpxg3LjBpmW4jh3fkz4SX32')
 
+  console.log(vaultClient)
   const refreshIx = vaultClient.getRefreshIx()
 
   return refreshIx
 }
-
-// // // //
 
 export async function getGenericTransferInstruction({
   schema,

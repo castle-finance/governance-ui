@@ -5,7 +5,6 @@ import { getMintMinAmountAsDecimal } from '@tools/sdk/units'
 import { PublicKey } from '@solana/web3.js'
 import { precision } from '@utils/formatting'
 import useWalletStore from 'stores/useWalletStore'
-import { GovernedMultiTypeAccount } from '@utils/tokens'
 import {
   CastleDepositForm,
   UiInstruction,
@@ -28,7 +27,7 @@ export enum StrategyTypes {
 export type StrategyType = `${StrategyTypes}`
 export interface VaultConfig {
   name: string
-  network: 'devnet' // ENHANCEMENT - add "mainnet-beta" | "testnet" here - pull this value from `WalletAdapterNetwork` in "@solana/wallet-adapter-base"?
+  network: 'devnet' | 'mainnet-beta' // ENHANCEMENT - add "mainnet-beta" | "testnet" here - pull this value from `WalletAdapterNetwork` in "@solana/wallet-adapter-base"?
   vault_id: string
   rebalance_threshold: number
   token_label: string // i.e. "SOL"
@@ -129,7 +128,9 @@ const CastleDeposit = ({
   useEffect(() => {
     const getCastleConfig = async () => {
       const response = await fetch('https://configs-api.vercel.app/api/configs')
-      const castleVaults = (await response.json()) as VaultConfig[]
+      console.log(connection.cluster) //  TODO - possible bug here, gives mainnet instead of devnet
+      const castleVaults = (await response.json())['devnet'] as VaultConfig[]
+      console.log(castleVaults)
       setCastleVaults(castleVaults)
     }
     getCastleConfig()
@@ -151,7 +152,7 @@ const CastleDeposit = ({
 
   useEffect(() => {
     setGovernedAccount(form.governedTokenAccount?.governance)
-    setMintInfo(form.governedTokenAccount?.mint?.account)
+    setMintInfo(form.governedTokenAccount?.extensions.mint?.account)
   }, [form.governedTokenAccount])
 
   const schema = getCastleDepositSchema({ form })
@@ -160,9 +161,7 @@ const CastleDeposit = ({
     <React.Fragment>
       <GovernedAccountSelect
         label="Source account"
-        governedAccounts={
-          governedTokenAccountsWithoutNfts as GovernedMultiTypeAccount[]
-        }
+        governedAccounts={governedTokenAccountsWithoutNfts}
         onChange={(value) => {
           handleSetForm({ value, propertyName: 'governedTokenAccount' })
         }}
@@ -182,12 +181,9 @@ const CastleDeposit = ({
         error={formErrors['castleVaultId']}
       >
         {castleVaults?.map((value) => (
-          <Select.Option
-            key={value.vault_id}
-            value={`${value.name} - ${value.strategy_type}`}
-          >
+          <Select.Option key={value.vault_id} value={value.vault_id}>
             <div className="break-all text-fgd-1 ">
-              <div className="mb-2">{`Vault: ${value.name} - ${value.strategy_type}`}</div>
+              <div className="mb-2">{`Vault: ${value.name}`}</div>
               <div className="space-y-0.5 text-xs text-fgd-3">
                 <div className="flex items-center">
                   Deposit Token: {value.token_mint}

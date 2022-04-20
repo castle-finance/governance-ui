@@ -22,7 +22,10 @@ import {
 } from '@utils/send'
 import { getCastleRefreshInstruction } from '@utils/instructionTools'
 import { WalletAdapter } from '@solana/wallet-adapter-base'
-import { InstructionOption } from '@components/InstructionOptions'
+import {
+  InstructionOption,
+  InstructionOptions,
+} from '@components/InstructionOptions'
 
 export const executeTransaction = async (
   { connection, wallet, programId }: RpcContext,
@@ -40,6 +43,7 @@ export const executeTransaction = async (
     programId
   )
 
+  console.log(programVersion)
   await withExecuteTransaction(
     instructions,
     programId,
@@ -50,12 +54,14 @@ export const executeTransaction = async (
     [instruction.account.getSingleInstruction()]
   )
 
+  console.log('withExecute')
   // Create proposal instruction
   const transaction = new Transaction().add(...instructions)
 
   // Send transaction based on its execution option
-  if (instructionOption == 'Castle: Refresh') {
-    await executeWithRefresh(transaction, connection, wallet)
+  if (instructionOption == InstructionOptions.castleRefresh) {
+    await executeWithRefresh(transaction, connection, wallet, instructionOption)
+    console.log('executerefresh')
   } else {
     await sendTransaction({
       transaction,
@@ -78,12 +84,15 @@ export const executeTransaction = async (
 const executeWithRefresh = async (
   tx: Transaction,
   connection: Connection,
-  wallet: WalletSigner
+  wallet: WalletSigner,
+  instructionOption: InstructionOption
 ) => {
-  const refreshIx = await getCastleRefreshInstruction({
+  const refreshIx = await getCastleRefreshInstruction(
     connection,
-    wallet: (wallet as unknown) as WalletAdapter,
-  })
+    (wallet as unknown) as WalletAdapter,
+    instructionOption
+  )
+
   const refreshTx = new Transaction().add(refreshIx)
 
   // Attempt to send both transactions in the same slot

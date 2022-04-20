@@ -29,18 +29,18 @@ export interface SplTokenTransferForm {
   mintInfo: MintInfo | undefined
 }
 
-export interface FriktionDepositForm {
-  amount: number | undefined
-  governedTokenAccount: AssetAccount | undefined
-  voltVaultId: string
-  programId: string | undefined
-  mintInfo: MintInfo | undefined
-}
-
 export interface CastleDepositForm {
   amount: number | undefined
   governedTokenAccount: AssetAccount | undefined
   castleVaultId: string
+  programId: string | undefined
+  mintInfo: MintInfo | undefined
+}
+
+export interface FriktionDepositForm {
+  amount: number | undefined
+  governedTokenAccount: AssetAccount | undefined
+  voltVaultId: string
   programId: string | undefined
   mintInfo: MintInfo | undefined
 }
