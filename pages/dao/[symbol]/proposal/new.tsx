@@ -139,30 +139,37 @@ const New = () => {
       )
     }
   }
+
   const [instructionsData, setInstructions] = useState<
     ComponentInstructionData[]
   >([{ type: availableInstructions[0] }])
+
   const handleSetInstructions = (val: any, index) => {
     const newInstructions = [...instructionsData]
     newInstructions[index] = { ...instructionsData[index], ...val }
     setInstructions(newInstructions)
   }
+
   const handleSetForm = ({ propertyName, value }) => {
     setFormErrors({})
     setForm({ ...form, [propertyName]: value })
   }
+
   const setInstructionType = ({ value, idx }) => {
     const newInstruction = {
       type: value,
     }
     handleSetInstructions(newInstruction, idx)
   }
+
   const addInstruction = () => {
     setInstructions([...instructionsData, { type: undefined }])
   }
+
   const removeInstruction = (idx) => {
     setInstructions([...instructionsData.filter((x, index) => index !== idx)])
   }
+
   const handleGetInstructions = async () => {
     const instructions: UiInstruction[] = []
     for (const inst of instructionsData) {
@@ -173,10 +180,12 @@ const New = () => {
     }
     return instructions
   }
+
   const handleTurnOffLoaders = () => {
     setIsLoadingSignedProposal(false)
     setIsLoadingDraft(false)
   }
+
   const handleCreate = async (isDraft) => {
     setFormErrors({})
     if (isDraft) {
@@ -206,6 +215,7 @@ const New = () => {
         throw Error('No governance selected')
       }
 
+      console.log('valid proposal')
       const additionalInstructions = [
         ...(instructions
           .flatMap((instruction) => {
@@ -260,12 +270,15 @@ const New = () => {
           isDraft,
         })
 
+        console.log('proposalAddress', proposalAddress)
+
         const url = fmtUrlWithCluster(
           `/dao/${symbol}/proposal/${proposalAddress}`
         )
 
         router.push(url)
       } catch (ex) {
+        console.log('caught an error')
         notify({ type: 'error', message: `${ex}` })
       }
     } else {
@@ -273,6 +286,7 @@ const New = () => {
     }
     handleTurnOffLoaders()
   }
+
   useEffect(() => {
     setInstructions([instructionsData[0]])
   }, [instructionsData[0].governedAccount?.pubkey])

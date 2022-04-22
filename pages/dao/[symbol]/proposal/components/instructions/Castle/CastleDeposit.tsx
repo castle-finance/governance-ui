@@ -128,10 +128,10 @@ const CastleDeposit = ({
   useEffect(() => {
     const getCastleConfig = async () => {
       const response = await fetch('https://configs-api.vercel.app/api/configs')
-      console.log(connection.cluster) //  TODO - possible bug here, gives mainnet instead of devnet
-      const castleVaults = (await response.json())['devnet'] as VaultConfig[]
-      console.log(castleVaults)
-      setCastleVaults(castleVaults)
+      const vaults = (await response.json())[
+        connection.cluster
+      ] as VaultConfig[]
+      setCastleVaults(vaults)
     }
     getCastleConfig()
   }, [])

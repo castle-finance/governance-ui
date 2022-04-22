@@ -190,6 +190,7 @@ export const createProposal = async (
     transaction1.add(...prerequisiteInstructions, ...instructions)
     transaction2.add(...insertInstructions)
 
+    console.log(transaction1)
     await sendTransaction({
       transaction: transaction1,
       wallet,
@@ -199,6 +200,7 @@ export const createProposal = async (
       successMessage: `${notificationTitle} created`,
     })
 
+    console.log(transaction2)
     await sendTransaction({
       transaction: transaction2,
       wallet,

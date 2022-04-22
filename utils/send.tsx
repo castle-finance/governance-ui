@@ -50,6 +50,8 @@ export async function sendTransaction({
     connection,
   })
 
+  console.log(signedTransaction)
+
   return await sendSignedTransaction({
     signedTransaction,
     connection,
@@ -266,6 +268,7 @@ export async function sendSignedAndAdjacentTransactions({
   console.log('Started awaiting confirmation for', txid)
   ;(async () => {
     while (!done && getUnixTs() - startTime < timeout) {
+      console.log('RETRYING')
       connection.sendRawTransaction(rawTransaction, {
         skipPreflight: true,
       })
@@ -274,8 +277,6 @@ export async function sendSignedAndAdjacentTransactions({
   })()
 
   try {
-    console.log('calling confirmation sig', txid, timeout, connection)
-
     console.log(
       'calling signatures confirmation',
       await awaitTransactionSignatureConfirmation(adjTxId, timeout, connection),

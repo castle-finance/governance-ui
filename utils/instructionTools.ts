@@ -38,9 +38,7 @@ import { ConnectedVoltSDK, FriktionSDK } from '@friktion-labs/friktion-sdk'
 import { AnchorWallet } from '@friktion-labs/friktion-sdk/dist/cjs/src/miscUtils'
 import { WSOL_MINT } from '@components/instructions/tools'
 import Decimal from 'decimal.js'
-import { VaultClient } from '@castlefinance/vault-sdk'
-// import { VaultClient } from '@castlefinance/vault-sdk'
-// import * as anchor from '@project-serum/anchor'
+import { Envs, VaultClient } from '@castlefinance/vault-sdk'
 import { AssetAccount } from '@utils/uiTypes/assets'
 import { VaultConfig } from 'pages/dao/[symbol]/proposal/components/instructions/Castle/CastleDeposit'
 import { InstructionOption } from '@components/InstructionOptions'
@@ -261,10 +259,10 @@ export async function getCastleDepositInstruction({
     governedTokenAccount?.extensions.token &&
     governedTokenAccount?.extensions.mint?.account &&
     governedTokenAccount?.governance &&
-    wallet
+    wallet &&
+    wallet.publicKey
   ) {
-    // Init Castle VaultClient and do the thing
-    // Logs destination VaultID
+    // Create a new provider
     const provider = new Provider(
       connection.current,
       (wallet as unknown) as AnchorWallet,
@@ -274,101 +272,42 @@ export async function getCastleDepositInstruction({
       }
     )
 
-    const vaultId = new PublicKey(
-      '9n6ekjHHgkPB9fVuWHzH6iNuxBxN22hEBryZXYFg6cNk'
-    )
-    const vaultReserveMint = new PublicKey(
-      'So11111111111111111111111111111111111111112'
-    )
+    // Load vaults from config api and filter by network
+    const response = await fetch('https://configs-api.vercel.app/api/configs')
+    const vaults = (await response.json())[connection.cluster] as VaultConfig[]
+    governedTokenAccount?.extensions.mint.account.decimals
 
+    // Primary vault
+    const vaultId = new PublicKey(vaults[0].vault_id)
+    const vaultReserveMint = new PublicKey(vaults[0].token_mint)
+
+    // Load the selected vault based on mint and vault id
     const vaultClient = await VaultClient.load(
       provider,
-      'devnet', // network,
       vaultReserveMint,
-      vaultId
+      vaultId,
+      Envs.mainnet
     )
 
-    // Get the LP token account for governance
-    console.log('cas: vaultClient', await vaultClient.getLpTokenMintInfo())
-    console.log(governedTokenAccount)
+    console.log(vaultClient, vaults)
 
-    // token account pub key
-    console.log(
-      'governedTokenAccount.pubkey.toBase58()',
-      governedTokenAccount.pubkey.toBase58()
-    )
+    // Get the deposit ixs. User pays for the DAO's LP ATA creation
+    const { depositIxs } = await vaultClient.realmsDepositIxs({
+      amount: 1,
+      reserveTokenOwner: governedTokenAccount.extensions.token.account.owner,
+      userReserveTokenAccount: governedTokenAccount.pubkey,
+      lpTokenAccountFeePayer: wallet.publicKey,
+    })
 
-    // token account mint
-    console.log(
-      'governedTokenAccount.extensions.mint.publicKey.toBase58()',
-      governedTokenAccount.extensions.mint.publicKey.toBase58()
-    )
-    console.log(
-      'governedTokenAccount.governance',
-      governedTokenAccount.governance.pubkey.toBase58(),
-      governedTokenAccount.governance.account
-    )
-
-    // const userReserveTokenAccount = await vaultClient.getUserReserveTokenAccount(
-    //   governedTokenAccount.pubkey
-    // )
-    // console.log(userReserveTokenAccount)
-
-    // // Get the LP ATA for the receiver (treasury)
-    // const { currentAddress: receiverAddress, needToCreateAta } = await getATA({
-    //   connection: connection,
-    //   receiverAddress: governedTokenAccount.governance.pubkey,
-    //   mintPK: vaultClient.vaultState.lpTokenMint,
-    //   wallet,
-    // })
-
-    // // Add LP account creation to prerequisite instructions
-    // if (needToCreateAta) {
-    //   prerequisiteInstructions.push(
-    //     Token.createAssociatedTokenAccountInstruction(
-    //       ASSOCIATED_TOKEN_PROGRAM_ID, // always ASSOCIATED_TOKEN_PROGRAM_ID
-    //       TOKEN_PROGRAM_ID, // always TOKEN_PROGRAM_ID
-    //       vaultClient.vaultState.lpTokenMint, // mint
-    //       receiverAddress, // ata
-    //       governedTokenAccount.governance.pubkey, // owner of token account
-    //       wallet.publicKey! // fee payer
-    //     )
-    //   )
-    // }
-
-    // // // //
-    // Loads up lending markets and ensures up-to-date
-    // const vaultClient = await VaultClient.load(
-    //   provider,
-    //   connection.cluster == 'mainnet' ? 'mainnet-beta' : 'devnet',
-    //   // TODO - ENFORCE SOURCE ACCOUNT AND VAULT RESERVE MINT ARE SAME
-    //   governedTokenAccount.extensions.mint.publicKey, //new PublicKey('EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v'),
-    //   new PublicKey(form.castleVaultId) //new PublicKey('EDtqJFHksXpdXLDuxgoYpjpxg3LjBpmW4jh3fkz4SX32')
-    // )
-    // // // // //
-
-    // Load the vault client
-
-    console.log(governedTokenAccount)
-
-    const { depositIxs, wSolSigner } = await vaultClient.depositIxs(
-      // @ts-ignore - TODO: dont do this
-      (wallet as unknown) as AnchorWallet,
-      1,
-      governedTokenAccount.pubkey // address of spl/sol account
-    )
     console.log(depositIxs)
+
+    // Add all instructions but the last one
+    prerequisiteInstructions.push(...depositIxs.slice(0, -1))
 
     // Add last instruction to be primarily displayed
     serializedInstruction = serializeInstructionToBase64(
       depositIxs[depositIxs.length - 1]
     )
-
-    // Add all instructions but the last one
-    prerequisiteInstructions.push(...depositIxs.slice(0, -1))
-
-    // Add signer
-    signers.push(wSolSigner)
 
     // // // // //
   }
@@ -417,23 +356,21 @@ export async function getCastleRefreshInstruction(
   const response = await fetch('https://configs-api.vercel.app/api/configs')
   const vaults = (await response.json())[network] as VaultConfig[]
 
-  // TODO - have instruction option include mint and strategy.
-  // Load the proper vault based on mint
-  const vault = vaults[0]
+  // Primary vault
+  const vaultId = new PublicKey(vaults[0].vault_id)
+  console.log(vaultId.toBase58())
+  const vaultReserveMint = new PublicKey(vaults[0].token_mint)
 
-  console.log('debug', vault)
+  console.log('vaults', vaults[0])
+
+  // Load the selected vault based on mint and vault id
   const vaultClient = await VaultClient.load(
     provider,
-    'devnet', // network,
-    new PublicKey('So11111111111111111111111111111111111111112'),
-    new PublicKey('9n6ekjHHgkPB9fVuWHzH6iNuxBxN22hEBryZXYFg6cNk')
+    vaultReserveMint,
+    vaultId,
+    network == 'mainnet-beta' ? Envs.mainnet : Envs.devnetParity
   )
-  // new PublicKey(vault.token_mint),
-  // new PublicKey(vault.vault_id)
-  // new PublicKey('EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v'),
-  // new PublicKey('EDtqJFHksXpdXLDuxgoYpjpxg3LjBpmW4jh3fkz4SX32')
 
-  console.log(vaultClient)
   const refreshIx = vaultClient.getRefreshIx()
 
   return refreshIx

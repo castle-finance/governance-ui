@@ -54,7 +54,6 @@ export const executeTransaction = async (
     [instruction.account.getSingleInstruction()]
   )
 
-  console.log('withExecute')
   // Create proposal instruction
   const transaction = new Transaction().add(...instructions)
 
