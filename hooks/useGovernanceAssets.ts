@@ -189,6 +189,12 @@ export default function useGovernanceAssets() {
       // isVisible: canUseAnyInstruction,
     },
     {
+      id: Instructions.WithrawFromCastle,
+      name: 'Castle: Withdraw from Vault',
+      isVisible: true, // TODO - remove hardcoded "true", replace with canUseAnyInstruction
+      // isVisible: canUseAnyInstruction,
+    },
+    {
       id: Instructions.DepositIntoVolt,
       name: 'Friktion: Deposit into Volt',
       isVisible: canUseAnyInstruction,

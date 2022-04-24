@@ -6,16 +6,16 @@ import { PublicKey } from '@solana/web3.js'
 import { precision } from '@utils/formatting'
 import useWalletStore from 'stores/useWalletStore'
 import {
-  CastleDepositForm,
+  CastleWithdrawForm,
   UiInstruction,
 } from '@utils/uiTypes/proposalCreationTypes'
 import { NewProposalContext } from '../../../new'
-import { getCastleDepositSchema } from '@utils/validations'
+import { getCastleWithdrawSchema } from '@utils/validations'
 import useGovernanceAssets from '@hooks/useGovernanceAssets'
 import { Governance } from '@solana/spl-governance'
 import { ProgramAccount } from '@solana/spl-governance'
 import GovernedAccountSelect from '../../GovernedAccountSelect'
-import { getCastleDepositInstruction } from '@utils/instructionTools'
+import { getCastleWithdrawInstruction } from '@utils/instructionTools'
 import Select from '@components/inputs/Select'
 
 // // // //
@@ -38,7 +38,7 @@ export interface VaultConfig {
 }
 // // //
 
-const CastleDeposit = ({
+const CastleWithdraw = ({
   index,
   governance,
 }: {
@@ -52,8 +52,8 @@ const CastleDeposit = ({
   const shouldBeGoverned = index !== 0 && governance
   const programId: PublicKey | undefined = realmInfo?.programId
 
-  // Store CastleDepositForm state
-  const [form, setForm] = useState<CastleDepositForm>({
+  // Store CastleWithdrawForm state
+  const [form, setForm] = useState<CastleWithdrawForm>({
     amount: undefined,
     governedTokenAccount: undefined,
     castleVaultId: '',
@@ -108,7 +108,7 @@ const CastleDeposit = ({
   }
 
   async function getInstruction(): Promise<UiInstruction> {
-    return await getCastleDepositInstruction({
+    return await getCastleWithdrawInstruction({
       schema,
       form,
       amount: form.amount ?? 0,
@@ -150,7 +150,7 @@ const CastleDeposit = ({
     setMintInfo(form.governedTokenAccount?.extensions.mint?.account)
   }, [form.governedTokenAccount])
 
-  const schema = getCastleDepositSchema({ form })
+  const schema = getCastleWithdrawSchema()
 
   return (
     <React.Fragment>
@@ -216,4 +216,4 @@ const CastleDeposit = ({
   )
 }
 
-export default CastleDeposit
+export default CastleWithdraw

@@ -5,7 +5,6 @@ import {
 } from '@solana/spl-governance'
 import {
   ASSOCIATED_TOKEN_PROGRAM_ID,
-  NATIVE_MINT,
   Token,
   TOKEN_PROGRAM_ID,
   u64,
@@ -13,11 +12,11 @@ import {
 import { SignerWalletAdapter, WalletAdapter } from '@solana/wallet-adapter-base'
 import {
   Account,
-  Cluster,
   Connection,
   Keypair,
   PublicKey,
   SystemProgram,
+  SYSVAR_CLOCK_PUBKEY,
   TransactionInstruction,
 } from '@solana/web3.js'
 import { BN, Provider } from '@project-serum/anchor'
@@ -38,7 +37,7 @@ import { ConnectedVoltSDK, FriktionSDK } from '@friktion-labs/friktion-sdk'
 import { AnchorWallet } from '@friktion-labs/friktion-sdk/dist/cjs/src/miscUtils'
 import { WSOL_MINT } from '@components/instructions/tools'
 import Decimal from 'decimal.js'
-import { Envs, VaultClient } from '@castlefinance/vault-sdk'
+import { VaultClient } from '@castlefinance/vault-sdk'
 import { AssetAccount } from '@utils/uiTypes/assets'
 import { VaultConfig } from 'pages/dao/[symbol]/proposal/components/instructions/Castle/CastleDeposit'
 import { InstructionOption } from '@components/InstructionOptions'
@@ -88,7 +87,7 @@ export async function getFriktionDepositInstruction({
     const sdk = new FriktionSDK({
       provider: {
         connection: connection.current,
-        wallet: (wallet as unknown) as AnchorWallet,
+        wallet: wallet as unknown as AnchorWallet,
       },
     })
     const cVoltSDK = new ConnectedVoltSDK(
@@ -175,7 +174,7 @@ export async function getFriktionDepositInstruction({
           connection.current,
           governedTokenAccount.extensions.mint!.publicKey,
           TOKEN_PROGRAM_ID,
-          (null as unknown) as Account
+          null as unknown as Account
         ).getMintInfo()
         decimals = underlyingAssetMintInfo.decimals
       }
@@ -247,6 +246,140 @@ export async function getCastleDepositInstruction({
   const prerequisiteInstructions: TransactionInstruction[] = []
   const governedTokenAccount = form.governedTokenAccount as AssetAccount
 
+  const signers: Keypair[] = []
+
+  if (
+    isValid &&
+    amount &&
+    amount > 0 &&
+    governedTokenAccount?.extensions.token?.publicKey &&
+    governedTokenAccount?.extensions.token &&
+    governedTokenAccount?.extensions.mint?.account &&
+    governedTokenAccount?.governance &&
+    wallet &&
+    wallet.publicKey
+  ) {
+    // Create a new provider
+    const provider = new Provider(
+      connection.current,
+      wallet as unknown as AnchorWallet,
+      {
+        preflightCommitment: 'confirmed',
+        commitment: 'confirmed',
+      }
+    )
+
+    // Load vaults from config api and filter by network
+    const response = await fetch('https://configs-api.vercel.app/api/configs')
+    let vaults = (await response.json()) as VaultConfig[]
+    vaults = vaults.filter((v) => v.deploymentEnv == connection.cluster)
+
+    // Filter for the submitted vault id
+    const vault = vaults.find((v) => v.vault_id === form.castleVaultId)
+    if (!vault) {
+      console.log(vaults, form)
+      throw new Error('Vault not found in config')
+    }
+
+    // Load the vault
+    const vaultClient = await VaultClient.load(
+      provider,
+      new PublicKey(vault.vault_id),
+      connection.cluster == 'mainnet' ? 'mainnet' : 'devnet-parity'
+    )
+
+    const reserveTokenOwner =
+      governedTokenAccount.extensions.token.account.owner
+
+    // Create the DAOs LP ATA if it does not exist already
+    let createLpAcctIx: TransactionInstruction | undefined = undefined
+    const userLpTokenAccount = await Token.getAssociatedTokenAddress(
+      ASSOCIATED_TOKEN_PROGRAM_ID,
+      TOKEN_PROGRAM_ID,
+      vaultClient.getVaultState().lpTokenMint,
+      reserveTokenOwner,
+      true
+    )
+    const userLpTokenAccountInfo =
+      await vaultClient.program.provider.connection.getAccountInfo(
+        userLpTokenAccount
+      )
+    if (userLpTokenAccountInfo == null) {
+      createLpAcctIx = Token.createAssociatedTokenAccountInstruction(
+        ASSOCIATED_TOKEN_PROGRAM_ID,
+        TOKEN_PROGRAM_ID,
+        vaultClient.getVaultState().lpTokenMint,
+        userLpTokenAccount,
+        reserveTokenOwner,
+        wallet.publicKey
+      )
+    }
+
+    // Get the deposit instruction
+    const { decimals } = governedTokenAccount.extensions.mint.account
+    const depositIx = vaultClient.program.instruction.deposit(
+      new BN(amount * Math.pow(10, decimals)),
+      {
+        accounts: {
+          vault: vaultClient.vaultId,
+          vaultAuthority: vaultClient.getVaultState().vaultAuthority,
+          vaultReserveToken: vaultClient.getVaultState().vaultReserveToken,
+          lpTokenMint: vaultClient.getVaultState().lpTokenMint,
+          userReserveToken: governedTokenAccount.pubkey,
+          userLpToken: userLpTokenAccount,
+          userAuthority: reserveTokenOwner,
+          tokenProgram: TOKEN_PROGRAM_ID,
+          clock: SYSVAR_CLOCK_PUBKEY,
+        },
+      }
+    )
+
+    // Create the LP token account if necessary
+    if (createLpAcctIx) {
+      prerequisiteInstructions.push(createLpAcctIx)
+    }
+
+    serializedInstruction = serializeInstructionToBase64(depositIx)
+  }
+
+  // Build + return UI instruction
+  const obj: UiInstruction = {
+    serializedInstruction,
+    isValid,
+    governance: governedTokenAccount?.governance,
+    prerequisiteInstructions: prerequisiteInstructions,
+    signers,
+    shouldSplitIntoSeparateTxs: true,
+  }
+  console.log('cas: obj', obj)
+
+  return obj
+}
+
+export async function getCastleWithdrawInstruction({
+  schema,
+  form,
+  amount,
+  connection,
+  wallet,
+  setFormErrors,
+}: {
+  schema: any
+  form: CastleDepositForm
+  amount: number
+  programId: PublicKey | undefined
+  connection: ConnectionContext
+  wallet: WalletAdapter | undefined
+  setFormErrors: any
+}): Promise<UiInstruction> {
+  const isValid = await validateInstruction({ schema, form, setFormErrors })
+
+  // NOTE - this should be `let serializedInstruction = ''` but it's const so the current changeset passes eslint
+  let serializedInstruction = ''
+
+  const prerequisiteInstructions: TransactionInstruction[] = []
+  const governedTokenAccount = form.governedTokenAccount as AssetAccount
+
   // const castleVaultId = new PublicKey(form.castleVaultId as string)
 
   const signers: Keypair[] = []
@@ -265,7 +398,7 @@ export async function getCastleDepositInstruction({
     // Create a new provider
     const provider = new Provider(
       connection.current,
-      (wallet as unknown) as AnchorWallet,
+      wallet as unknown as AnchorWallet,
       {
         preflightCommitment: 'confirmed',
         commitment: 'confirmed',
@@ -274,42 +407,39 @@ export async function getCastleDepositInstruction({
 
     // Load vaults from config api and filter by network
     const response = await fetch('https://configs-api.vercel.app/api/configs')
-    const vaults = (await response.json())[connection.cluster] as VaultConfig[]
-    governedTokenAccount?.extensions.mint.account.decimals
+    let vaults = (await response.json()) as VaultConfig[]
+    vaults = vaults.filter((v) => v.deploymentEnv == connection.cluster)
 
-    // Primary vault
-    const vaultId = new PublicKey(vaults[0].vault_id)
-    const vaultReserveMint = new PublicKey(vaults[0].token_mint)
+    // Filter for the submitted vault id
+    const vault = vaults.find((v) => v.vault_id === form.castleVaultId)
+    if (!vault) {
+      console.log(vaults, form)
+      throw new Error('Vault not found in config')
+    }
 
-    // Load the selected vault based on mint and vault id
+    // Load the vault
     const vaultClient = await VaultClient.load(
       provider,
-      vaultReserveMint,
-      vaultId,
-      Envs.mainnet
+      new PublicKey(vault.vault_id),
+      connection.cluster == 'mainnet' ? 'mainnet' : 'devnet-parity'
     )
 
-    console.log(vaultClient, vaults)
+    const { decimals } = governedTokenAccount.extensions.mint.account
 
     // Get the deposit ixs. User pays for the DAO's LP ATA creation
-    const { depositIxs } = await vaultClient.realmsDepositIxs({
-      amount: 1,
+    const { depositIx, createLpAcctIx } = await vaultClient.realmsDepositIxs({
+      amount: amount * Math.pow(10, decimals),
       reserveTokenOwner: governedTokenAccount.extensions.token.account.owner,
       userReserveTokenAccount: governedTokenAccount.pubkey,
       lpTokenAccountFeePayer: wallet.publicKey,
     })
 
-    console.log(depositIxs)
+    // Create the LP token account if necessary
+    if (createLpAcctIx) {
+      prerequisiteInstructions.push(createLpAcctIx)
+    }
 
-    // Add all instructions but the last one
-    prerequisiteInstructions.push(...depositIxs.slice(0, -1))
-
-    // Add last instruction to be primarily displayed
-    serializedInstruction = serializeInstructionToBase64(
-      depositIxs[depositIxs.length - 1]
-    )
-
-    // // // // //
+    serializedInstruction = serializeInstructionToBase64(depositIx)
   }
 
   // Build + return UI instruction
@@ -339,36 +469,30 @@ export async function getCastleRefreshInstruction(
   instructionOption: InstructionOption
 ) {
   // Initialize a new provider
-  const provider = new Provider(
-    connection,
-    (wallet as unknown) as AnchorWallet,
-    {
-      preflightCommitment: 'confirmed',
-      commitment: 'confirmed',
-    }
-  )
+  const provider = new Provider(connection, wallet as unknown as AnchorWallet, {
+    preflightCommitment: 'confirmed',
+    commitment: 'confirmed',
+  })
 
-  // Look up the current network from the endpoint, checking for '-beta' suffix
-  const network = (getNetworkFromEndpoint(connection.rpcEndpoint) ||
-    'mainnet-beta') as Cluster
+  // Look up the current network from the endpoint
+  const network = getNetworkFromEndpoint(connection.rpcEndpoint)
 
   // Load vaults from config api and filter by network
-  const response = await fetch('https://configs-api.vercel.app/api/configs')
-  const vaults = (await response.json())[network] as VaultConfig[]
+  const response = await fetch('https://api.castle.finance/configs')
+  let vaults = (await response.json()) as VaultConfig[]
+  vaults = vaults.filter((v) => v.deploymentEnv == network)
 
-  // Primary vault
-  const vaultId = new PublicKey(vaults[0].vault_id)
-  console.log(vaultId.toBase58())
-  const vaultReserveMint = new PublicKey(vaults[0].token_mint)
+  // Filter for the submitted vault id
+  const vault = vaults[0]
+  if (!vault) {
+    throw new Error('Vault not found in config')
+  }
 
-  console.log('vaults', vaults[0])
-
-  // Load the selected vault based on mint and vault id
+  // Load the vault
   const vaultClient = await VaultClient.load(
     provider,
-    vaultReserveMint,
-    vaultId,
-    network == 'mainnet-beta' ? Envs.mainnet : Envs.devnetParity
+    new PublicKey(vault.vault_id),
+    network == 'mainnet' ? 'mainnet' : 'devnet-parity'
   )
 
   const refreshIx = vaultClient.getRefreshIx()

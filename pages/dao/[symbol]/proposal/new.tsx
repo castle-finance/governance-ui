@@ -75,9 +75,8 @@ const defaultGovernanceCtx: InstructionsContext = {
   governance: null,
   setGovernance: () => null,
 }
-export const NewProposalContext = createContext<InstructionsContext>(
-  defaultGovernanceCtx
-)
+export const NewProposalContext =
+  createContext<InstructionsContext>(defaultGovernanceCtx)
 
 // Takes the first encountered governance account
 function extractGovernanceAccountFromInstructionsData(
@@ -103,10 +102,8 @@ const New = () => {
     description: '',
   })
   const [formErrors, setFormErrors] = useState({})
-  const [
-    governance,
-    setGovernance,
-  ] = useState<ProgramAccount<Governance> | null>(null)
+  const [governance, setGovernance] =
+    useState<ProgramAccount<Governance> | null>(null)
   const [isLoadingSignedProposal, setIsLoadingSignedProposal] = useState(false)
   const [isLoadingDraft, setIsLoadingDraft] = useState(false)
   const isLoading = isLoadingSignedProposal || isLoadingDraft
@@ -292,9 +289,8 @@ const New = () => {
   }, [instructionsData[0].governedAccount?.pubkey])
 
   useEffect(() => {
-    const governedAccount = extractGovernanceAccountFromInstructionsData(
-      instructionsData
-    )
+    const governedAccount =
+      extractGovernanceAccountFromInstructionsData(instructionsData)
 
     setGovernance(governedAccount)
   }, [instructionsData])
@@ -323,6 +319,8 @@ const New = () => {
       case Instructions.None:
         return <Empty index={idx} governance={governance}></Empty>
       case Instructions.DepositIntoCastle:
+        return <CastleDeposit index={idx} governance={governance} />
+      case Instructions.WithrawFromCastle:
         return <CastleDeposit index={idx} governance={governance} />
       case Instructions.DepositIntoVolt:
         return <FriktionDeposit index={idx} governance={governance} />
@@ -509,9 +507,8 @@ const New = () => {
             >
               <h2>Transactions</h2>
               {instructionsData.map((instruction, idx) => {
-                const availableInstructionsForIdx = getAvailableInstructionsForIndex(
-                  idx
-                )
+                const availableInstructionsForIdx =
+                  getAvailableInstructionsForIndex(idx)
                 return (
                   <div
                     key={idx}
