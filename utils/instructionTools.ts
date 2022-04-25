@@ -40,9 +40,12 @@ import { WSOL_MINT } from '@components/instructions/tools'
 import Decimal from 'decimal.js'
 import { VaultClient } from '@castlefinance/vault-sdk'
 import { AssetAccount } from '@utils/uiTypes/assets'
-import { VaultConfig } from 'pages/dao/[symbol]/proposal/components/instructions/Castle/CastleDeposit'
-import { InstructionOption } from '@components/InstructionOptions'
 import * as bufferLayout from 'buffer-layout'
+import {
+  DEVNET_PARITY_VAULTS,
+  MAINNET_VAULTS,
+  VaultConfig,
+} from '@castlefinance/vault-core'
 
 export const validateInstruction = async ({
   schema,
@@ -261,36 +264,30 @@ export async function getCastleDepositInstruction({
     wallet &&
     wallet.publicKey
   ) {
-    // // Create a new provider
-    // const provider = new Provider(
-    //   connection.current,
-    //   wallet as unknown as AnchorWallet,
-    //   {
-    //     preflightCommitment: 'confirmed',
-    //     commitment: 'confirmed',
-    //   }
-    // )
+    // Create a new provider
+    const provider = new Provider(
+      connection.current,
+      wallet as unknown as AnchorWallet,
+      {
+        preflightCommitment: 'confirmed',
+        commitment: 'confirmed',
+      }
+    )
 
-    // // Load vaults from config api and filter by network
-    // const response = await fetch('https://configs-api.vercel.app/api/configs')
-    // let vaults = (await response.json()) as VaultConfig[]
-    // vaults = vaults.filter((v) => v.deploymentEnv == connection.cluster)
+    const vaults =
+      connection.cluster == 'mainnet' ? MAINNET_VAULTS : DEVNET_PARITY_VAULTS
+    // Grab only the first vault
+    const vault = vaults[0]
+    if (!vault) {
+      throw new Error('Vault not found in config')
+    }
 
-    // // Filter for the submitted vault id
-    // const vault = vaults.find((v) => v.vault_id === form.castleVaultId)
-    // if (!vault) {
-    //   console.log(vaults, form)
-    //   throw new Error('Vault not found in config')
-    // }
-
-    // // Load the vault
-    // const vaultClient = await VaultClient.load(
-    //   provider,
-    //   new PublicKey(vault.vault_id),
-    //   connection.cluster == 'mainnet' ? 'mainnet' : 'devnet-parity'
-    // )
-
-    const vaultClient = await getCastleVaultInfo(connection, wallet)
+    // Load the vault
+    const vaultClient = await VaultClient.load(
+      provider,
+      new PublicKey(vault.vault_id),
+      connection.cluster == 'mainnet' ? 'mainnet' : 'devnet-parity'
+    )
 
     const reserveTokenOwner =
       governedTokenAccount.extensions.token.account.owner
@@ -407,15 +404,11 @@ export async function getCastleWithdrawInstruction({
       }
     )
 
-    // Load vaults from config api and filter by network
-    const response = await fetch('https://configs-api.vercel.app/api/configs')
-    let vaults = (await response.json()) as VaultConfig[]
-    vaults = vaults.filter((v) => v.deploymentEnv == connection.cluster)
-
-    // Filter for the submitted vault id
-    const vault = vaults.find((v) => v.vault_id === form.castleVaultId)
+    // Get the deployed vault
+    const vaults =
+      connection.cluster == 'mainnet' ? MAINNET_VAULTS : DEVNET_PARITY_VAULTS
+    const vault = vaults[0]
     if (!vault) {
-      console.log(vaults, form)
       throw new Error('Vault not found in config')
     }
 
@@ -505,34 +498,29 @@ export async function getCastleReconcileInstruction(
   wallet: WalletAdapter | undefined,
   proposalTx: Transaction
 ) {
-  // // Initialize a new provider
-  // const provider = new Provider(connection, wallet as unknown as AnchorWallet, {
-  //   preflightCommitment: 'confirmed',
-  //   commitment: 'confirmed',
-  // })
+  // Initialize a new provider
+  const provider = new Provider(connection, wallet as unknown as AnchorWallet, {
+    preflightCommitment: 'confirmed',
+    commitment: 'confirmed',
+  })
 
-  // // Look up the current network from the endpoint
-  // const network = getNetworkFromEndpoint(connection.rpcEndpoint)
+  // Look up the current network from the endpoint
+  const network = getNetworkFromEndpoint(connection.rpcEndpoint)
 
-  // // Load vaults from config api and filter by network
-  // const response = await fetch('https://api.castle.finance/configs')
-  // let vaults = (await response.json()) as VaultConfig[]
-  // vaults = vaults.filter((v) => v.deploymentEnv == network)
+  const vaults = network == 'mainnet' ? MAINNET_VAULTS : DEVNET_PARITY_VAULTS
 
-  // // Filter for the submitted vault id
-  // const vault = vaults[0]
-  // if (!vault) {
-  //   throw new Error('Vault not found in config')
-  // }
+  // Filter for the submitted vault id
+  const vault = vaults[0]
+  if (!vault) {
+    throw new Error('Vault not found in config')
+  }
 
-  // // Load the vault
-  // const vaultClient = await VaultClient.load(
-  //   provider,
-  //   new PublicKey(vault.vault_id),
-  //   network == 'mainnet' ? 'mainnet' : 'devnet-parity'
-  // )
-
-  const vaultClient = await getCastleVaultInfo(connection, wallet)
+  // Load the vault
+  const vaultClient = await VaultClient.load(
+    provider,
+    new PublicKey(vault.vault_id),
+    network == 'mainnet' ? 'mainnet' : 'devnet-parity'
+  )
 
   // Bundle reconcile and refresh into the same tx
   const amount = 100
@@ -564,38 +552,33 @@ export async function getCastleReconcileInstruction(
  */
 export async function getCastleRefreshInstruction(
   connection: Connection,
-  wallet: WalletAdapter | undefined,
-  instructionOption: InstructionOption
+  wallet: WalletAdapter | undefined
 ) {
-  // // Initialize a new provider
-  // const provider = new Provider(connection, wallet as unknown as AnchorWallet, {
-  //   preflightCommitment: 'confirmed',
-  //   commitment: 'confirmed',
-  // })
+  // Initialize a new provider
+  const provider = new Provider(connection, wallet as unknown as AnchorWallet, {
+    preflightCommitment: 'confirmed',
+    commitment: 'confirmed',
+  })
 
-  // // Look up the current network from the endpoint
-  // const network = getNetworkFromEndpoint(connection.rpcEndpoint)
+  // Look up the current network from the endpoint
+  const network = getNetworkFromEndpoint(connection.rpcEndpoint)
 
-  // // Load vaults from config api and filter by network
-  // const response = await fetch('https://api.castle.finance/configs')
-  // let vaults = (await response.json()) as VaultConfig[]
-  // vaults = vaults.filter((v) => v.deploymentEnv == network)
+  const vaults = network == 'mainnet' ? MAINNET_VAULTS : DEVNET_PARITY_VAULTS
 
-  // // Filter for the submitted vault id
-  // const vault = vaults[0]
-  // if (!vault) {
-  //   throw new Error('Vault not found in config')
-  // }
+  // Filter for the submitted vault id
+  const vault = vaults[0]
+  if (!vault) {
+    throw new Error('Vault not found in config')
+  }
 
-  // // Load the vault
-  // const vaultClient = await VaultClient.load(
-  //   provider,
-  //   new PublicKey(vault.vault_id),
-  //   network == 'mainnet' ? 'mainnet' : 'devnet-parity'
-  // )
+  // Load the vault
+  const vaultClient = await VaultClient.load(
+    provider,
+    new PublicKey(vault.vault_id),
+    network == 'mainnet' ? 'mainnet' : 'devnet-parity'
+  )
 
-  const vaultClient = await getCastleVaultInfo(connection, wallet)
-
+  // Get refresh ix
   const refreshIx = vaultClient.getRefreshIx()
 
   return refreshIx
@@ -1087,41 +1070,4 @@ export const getTransferInstructionObj = async ({
   )
   obj.transferInstruction = transferIx
   return obj
-}
-
-/**
- * Infers deployed vault from network
- * @param connection
- * @param wallet
- * @returns
- */
-const getCastleVaultInfo = async (connection, wallet) => {
-  // Initialize a new provider
-  const provider = new Provider(connection, wallet as unknown as AnchorWallet, {
-    preflightCommitment: 'confirmed',
-    commitment: 'confirmed',
-  })
-
-  // Look up the current network from the endpoint
-  const network = getNetworkFromEndpoint(connection.rpcEndpoint)
-
-  // Load vaults from config api and filter by network
-  const response = await fetch('https://api.castle.finance/configs')
-  let vaults = (await response.json()) as VaultConfig[]
-  vaults = vaults.filter((v) => v.deploymentEnv == network)
-
-  // Filter for the submitted vault id
-  const vault = vaults[0]
-  if (!vault) {
-    throw new Error('Vault not found in config')
-  }
-
-  // Load the vault
-  const vaultClient = await VaultClient.load(
-    provider,
-    new PublicKey(vault.vault_id),
-    network == 'mainnet' ? 'mainnet' : 'devnet-parity'
-  )
-
-  return vaultClient
 }

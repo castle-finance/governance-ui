@@ -45,5 +45,9 @@ export function getConnectionContext(cluster: string): ConnectionContext {
  */
 export function getNetworkFromEndpoint(endpoint: string) {
   const network = ENDPOINTS.find((e) => e.url === endpoint)
+  if (!network) {
+    console.log(endpoint, ENDPOINTS)
+    throw new Error('Network not found')
+  }
   return network?.name
 }

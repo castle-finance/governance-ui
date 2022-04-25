@@ -17,26 +17,16 @@ import { ProgramAccount } from '@solana/spl-governance'
 import GovernedAccountSelect from '../../GovernedAccountSelect'
 import { getCastleDepositInstruction } from '@utils/instructionTools'
 import Select from '@components/inputs/Select'
+import {
+  DeploymentEnvs,
+  DEVNET_PARITY_VAULTS,
+  MAINNET_VAULTS,
+  VaultConfig,
+} from '@castlefinance/vault-core'
 
-// // // //
-// TODO - Pull from config
-export enum StrategyTypes {
-  maxYield = 'maxYield',
-  equalAllocation = 'equalAllocation',
-}
-export type StrategyType = `${StrategyTypes}`
-export interface VaultConfig {
-  name: string
-  cluster: 'devnet' | 'mainnet-beta' // ENHANCEMENT - add "mainnet-beta" | "testnet" here - pull this value from `WalletAdapterNetwork` in "@solana/wallet-adapter-base"?
-  deploymentEnv: string
-  vault_id: string
-  rebalance_threshold: number
-  token_label: string // i.e. "SOL"
-  token_mint: string // i.e. SOL_MINT
-  version: string // i.e "0.1.1"
-  strategy_type: StrategyType
-}
-// // //
+type VaultConfigs =
+  | VaultConfig<DeploymentEnvs.devnetParity>[]
+  | VaultConfig<DeploymentEnvs.mainnet>[]
 
 const CastleDeposit = ({
   index,
@@ -61,7 +51,7 @@ const CastleDeposit = ({
     mintInfo: undefined,
   })
 
-  const [castleVaults, setCastleVaults] = useState<VaultConfig[] | null>(null)
+  const [castleVaults, setCastleVaults] = useState<VaultConfigs | null>(null)
 
   const [governedAccount, setGovernedAccount] = useState<
     ProgramAccount<Governance> | undefined
@@ -122,14 +112,13 @@ const CastleDeposit = ({
   // Grab Castle vault information from config server
   useEffect(() => {
     const getCastleConfig = async () => {
-      const response = await fetch('https://api.castle.finance/configs')
-      let vaults = (await response.json()) as VaultConfig[]
-      vaults = vaults.filter((v) => v.deploymentEnv == connection.cluster)
-      console.log(vaults)
+      const vaults =
+        connection.cluster == 'mainnet' ? MAINNET_VAULTS : DEVNET_PARITY_VAULTS
+      console.log('vaults', vaults, 'connection', connection)
       setCastleVaults(vaults)
     }
     getCastleConfig()
-  }, [])
+  }, [connection.cluster])
 
   useEffect(() => {
     handleSetForm({
