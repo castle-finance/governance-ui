@@ -18,7 +18,6 @@ import { ProgramAccount } from '@solana/spl-governance'
 import {
   sendSignedAndAdjacentTransactions,
   sendTransaction,
-  signTransaction,
   signTransactions,
 } from '@utils/send'
 import {
@@ -30,10 +29,6 @@ import {
   InstructionOption,
   InstructionOptions,
 } from '@components/InstructionOptions'
-import {
-  sendSignedTransaction,
-  sendTransactions,
-} from '@utils/sendTransactions'
 
 export const executeTransaction = async (
   { connection, wallet, programId }: RpcContext,
@@ -78,7 +73,7 @@ export const executeTransaction = async (
         transaction,
         connection,
         wallet,
-        instructionOption
+        instruction
       )
     default:
       await sendTransaction({
@@ -90,25 +85,6 @@ export const executeTransaction = async (
         successMessage: 'Execution finalized',
       })
   }
-  // if (instructionOption == InstructionOptions.castleRefresh) {
-  //   await executeWithRefresh(transaction, connection, wallet, instructionOption)
-  // } else if (instructionOption == InstructionOptions.castleReconcileRefresh) {
-  //   await executeWithRefreshAndReconcile(
-  //     transaction,
-  //     connection,
-  //     wallet,
-  //     instructionOption
-  //   )
-  // } else {
-  //   await sendTransaction({
-  //     transaction,
-  //     wallet,
-  //     connection,
-  //     signers,
-  //     sendingMessage: 'Executing instruction',
-  //     successMessage: 'Execution finalized',
-  //   })
-  // }
 }
 
 /**
@@ -161,13 +137,13 @@ const executeWithRefreshAndReconcile = async (
   tx: Transaction,
   connection: Connection,
   wallet: WalletSigner,
-  instructionOption: InstructionOption
+  instruction: ProgramAccount<ProposalTransaction>
 ) => {
   // Get reconcile txs
   const reconcileTxs = await getCastleReconcileInstruction(
     connection,
     wallet as unknown as WalletAdapter,
-    tx
+    instruction
   )
 
   console.log('reconcileTxs', reconcileTxs)
@@ -188,8 +164,7 @@ const executeWithRefreshAndReconcile = async (
   // Get refresh Tx and sign alongside withdraw
   const refreshIx = await getCastleRefreshInstruction(
     connection,
-    wallet as unknown as WalletAdapter,
-    instructionOption
+    wallet as unknown as WalletAdapter
   )
 
   const refreshTx = new Transaction().add(refreshIx)

@@ -65,6 +65,7 @@ import CastleDeposit from './components/instructions/Castle/CastleDeposit'
 import RealmConfig from './components/instructions/RealmConfig'
 import CloseTokenAccount from './components/instructions/CloseTokenAccount'
 import { InstructionDataWithHoldUpTime } from 'actions/createProposal'
+import CastleWithdraw from './components/instructions/Castle/CastleWithdraw'
 
 const schema = yup.object().shape({
   title: yup.string().required('Title is required'),
@@ -321,7 +322,7 @@ const New = () => {
       case Instructions.DepositIntoCastle:
         return <CastleDeposit index={idx} governance={governance} />
       case Instructions.WithrawFromCastle:
-        return <CastleDeposit index={idx} governance={governance} />
+        return <CastleWithdraw index={idx} governance={governance} />
       case Instructions.DepositIntoVolt:
         return <FriktionDeposit index={idx} governance={governance} />
       case Instructions.WithdrawFromVolt:

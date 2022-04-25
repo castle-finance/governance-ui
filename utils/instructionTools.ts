@@ -1,6 +1,7 @@
 import {
   Governance,
   ProgramAccount,
+  ProposalTransaction,
   serializeInstructionToBase64,
 } from '@solana/spl-governance'
 import {
@@ -20,7 +21,8 @@ import {
   Transaction,
   TransactionInstruction,
 } from '@solana/web3.js'
-import { BN, Provider } from '@project-serum/anchor'
+import * as bufferLayout from '@solana/buffer-layout'
+import { BN, Instruction, Provider } from '@project-serum/anchor'
 import { Marinade, MarinadeConfig } from '@marinade.finance/marinade-ts-sdk'
 import {
   getMintNaturalAmountFromDecimal,
@@ -40,7 +42,6 @@ import { WSOL_MINT } from '@components/instructions/tools'
 import Decimal from 'decimal.js'
 import { VaultClient } from '@castlefinance/vault-sdk'
 import { AssetAccount } from '@utils/uiTypes/assets'
-import * as bufferLayout from 'buffer-layout'
 import {
   DEVNET_PARITY_VAULTS,
   MAINNET_VAULTS,
@@ -419,7 +420,7 @@ export async function getCastleWithdrawInstruction({
       connection.cluster == 'mainnet' ? 'mainnet' : 'devnet-parity'
     )
 
-    const reserveTokenOwner =
+    const lpTokenAccountOwner =
       governedTokenAccount.extensions.token.account.owner
 
     // Create the DAOs Reserve ATA if it does not exist already
@@ -428,7 +429,7 @@ export async function getCastleWithdrawInstruction({
       ASSOCIATED_TOKEN_PROGRAM_ID,
       TOKEN_PROGRAM_ID,
       vaultClient.getVaultState().reserveTokenMint,
-      reserveTokenOwner,
+      lpTokenAccountOwner,
       true
     )
     const userReserveTokenAccountInfo =
@@ -441,12 +442,18 @@ export async function getCastleWithdrawInstruction({
         TOKEN_PROGRAM_ID,
         vaultClient.getVaultState().reserveTokenMint,
         userReserveTokenAccount,
-        reserveTokenOwner,
+        lpTokenAccountOwner,
         wallet.publicKey
       )
     }
 
-    // Get withdraw instruction
+    console.log('userReserveTokenAccount', userReserveTokenAccount.toBase58())
+    console.log(
+      'vaultClient.getVaultState().vaultReserveToken',
+      vaultClient.getVaultState().vaultReserveToken.toBase58()
+    )
+    // Get withdraw instruction. User selects the LP token to deposit back
+    // into the vault in exchange for the reserve token
     const { decimals } = governedTokenAccount.extensions.mint.account
     const withdrawIx = vaultClient.program.instruction.withdraw(
       new BN(amount * Math.pow(10, decimals)),
@@ -454,9 +461,9 @@ export async function getCastleWithdrawInstruction({
         accounts: {
           vault: vaultClient.vaultId,
           vaultAuthority: vaultClient.getVaultState().vaultAuthority,
-          userAuthority: wallet.publicKey,
-          userLpToken: userReserveTokenAccount,
-          userReserveToken: governedTokenAccount.pubkey,
+          userAuthority: lpTokenAccountOwner,
+          userLpToken: governedTokenAccount.pubkey,
+          userReserveToken: userReserveTokenAccount,
           vaultReserveToken: vaultClient.getVaultState().vaultReserveToken,
           lpTokenMint: vaultClient.getVaultState().lpTokenMint,
           tokenProgram: TOKEN_PROGRAM_ID,
@@ -496,7 +503,7 @@ export async function getCastleWithdrawInstruction({
 export async function getCastleReconcileInstruction(
   connection: Connection,
   wallet: WalletAdapter | undefined,
-  proposalTx: Transaction
+  instruction: ProgramAccount<ProposalTransaction>
 ) {
   // Initialize a new provider
   const provider = new Provider(connection, wallet as unknown as AnchorWallet, {
@@ -523,22 +530,18 @@ export async function getCastleReconcileInstruction(
   )
 
   // Bundle reconcile and refresh into the same tx
-  const amount = 100
-  console.log(proposalTx)
+  const ix = instruction.account.getSingleInstruction()
 
-  // withdraw ix
-  try {
-    const ix = proposalTx.instructions[0]
-    const dataLayout = bufferLayout.struct([
-      bufferLayout.u8('instruction'),
-      bufferLayout.nu64('amount'),
-    ])
-    console.log(dataLayout)
-    const decoded = dataLayout.decode(ix.data)
-    console.log(decoded)
-  } catch (e) {
-    console.log(e)
-  }
+  // Grab the amount parameter from the instruction :^)
+  const amount = new BN(
+    [...ix.data.slice(8, 16)]
+      .reverse()
+      .map((i) => `00${i.toString(16)}`.slice(-2))
+      .join(''),
+    16
+  ).toNumber()
+
+  console.log('Grabbed', amount, 'from proposal instruction')
 
   return await vaultClient.getReconcileTxs(amount)
 }

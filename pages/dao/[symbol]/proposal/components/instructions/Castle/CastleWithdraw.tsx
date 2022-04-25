@@ -153,7 +153,6 @@ const CastleWithdraw = ({
         shouldBeGoverned={shouldBeGoverned}
         governance={governance}
       />
-
       <Select
         label="Castle Vault Destination"
         value={form.castleVaultId}
@@ -177,7 +176,6 @@ const CastleWithdraw = ({
           </Select.Option>
         ))}
       </Select>
-
       {/* TODO - add link to vault you'll be depositing to */}
       {form.castleVaultId !== '' && (
         <a
@@ -189,7 +187,6 @@ const CastleWithdraw = ({
           View destination vault ↗️
         </a>
       )}
-
       <Input
         min={mintMinAmount}
         label="Amount"
