@@ -122,7 +122,7 @@ const CastleDeposit = ({
   // Grab Castle vault information from config server
   useEffect(() => {
     const getCastleConfig = async () => {
-      const response = await fetch('https://configs-api.vercel.app/api/configs')
+      const response = await fetch('https://api.castle.finance/configs')
       let vaults = (await response.json()) as VaultConfig[]
       vaults = vaults.filter((v) => v.deploymentEnv == connection.cluster)
       console.log(vaults)

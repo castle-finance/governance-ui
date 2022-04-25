@@ -6,6 +6,7 @@ import { SelectorIcon } from '@heroicons/react/solid'
 export enum InstructionOptions {
   none = 'none',
   castleRefresh = 'Castle: Refresh USDC',
+  castleReconcileRefresh = 'Castle: Reconcile & Refresh USDC',
 }
 
 export type InstructionOption = `${InstructionOptions}`
@@ -14,6 +15,10 @@ export type InstructionOption = `${InstructionOptions}`
 const executionOptions: { label: string; value: InstructionOption }[] = [
   { label: 'Select Option', value: InstructionOptions.none },
   { label: 'Castle: Refresh', value: InstructionOptions.castleRefresh },
+  {
+    label: 'Castle: Reconcile',
+    value: InstructionOptions.castleReconcileRefresh,
+  },
 ]
 
 export default function InstructionOptionInput(props: {

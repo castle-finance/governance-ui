@@ -18,14 +18,22 @@ import { ProgramAccount } from '@solana/spl-governance'
 import {
   sendSignedAndAdjacentTransactions,
   sendTransaction,
+  signTransaction,
   signTransactions,
 } from '@utils/send'
-import { getCastleRefreshInstruction } from '@utils/instructionTools'
+import {
+  getCastleReconcileInstruction,
+  getCastleRefreshInstruction,
+} from '@utils/instructionTools'
 import { WalletAdapter } from '@solana/wallet-adapter-base'
 import {
   InstructionOption,
   InstructionOptions,
 } from '@components/InstructionOptions'
+import {
+  sendSignedTransaction,
+  sendTransactions,
+} from '@utils/sendTransactions'
 
 export const executeTransaction = async (
   { connection, wallet, programId }: RpcContext,
@@ -43,7 +51,6 @@ export const executeTransaction = async (
     programId
   )
 
-  console.log(programVersion)
   await withExecuteTransaction(
     instructions,
     programId,
@@ -58,19 +65,50 @@ export const executeTransaction = async (
   const transaction = new Transaction().add(...instructions)
 
   // Send transaction based on its execution option
-  if (instructionOption == InstructionOptions.castleRefresh) {
-    await executeWithRefresh(transaction, connection, wallet, instructionOption)
-    console.log('executerefresh')
-  } else {
-    await sendTransaction({
-      transaction,
-      wallet,
-      connection,
-      signers,
-      sendingMessage: 'Executing instruction',
-      successMessage: 'Execution finalized',
-    })
+  switch (instructionOption) {
+    case InstructionOptions.castleRefresh:
+      return await executeWithRefresh(
+        transaction,
+        connection,
+        wallet,
+        instructionOption
+      )
+    case InstructionOptions.castleReconcileRefresh:
+      return await executeWithRefreshAndReconcile(
+        transaction,
+        connection,
+        wallet,
+        instructionOption
+      )
+    default:
+      await sendTransaction({
+        transaction,
+        wallet,
+        connection,
+        signers,
+        sendingMessage: 'Executing instruction',
+        successMessage: 'Execution finalized',
+      })
   }
+  // if (instructionOption == InstructionOptions.castleRefresh) {
+  //   await executeWithRefresh(transaction, connection, wallet, instructionOption)
+  // } else if (instructionOption == InstructionOptions.castleReconcileRefresh) {
+  //   await executeWithRefreshAndReconcile(
+  //     transaction,
+  //     connection,
+  //     wallet,
+  //     instructionOption
+  //   )
+  // } else {
+  //   await sendTransaction({
+  //     transaction,
+  //     wallet,
+  //     connection,
+  //     signers,
+  //     sendingMessage: 'Executing instruction',
+  //     successMessage: 'Execution finalized',
+  //   })
+  // }
 }
 
 /**
@@ -88,7 +126,7 @@ const executeWithRefresh = async (
 ) => {
   const refreshIx = await getCastleRefreshInstruction(
     connection,
-    (wallet as unknown) as WalletAdapter,
+    wallet as unknown as WalletAdapter,
     instructionOption
   )
 
@@ -104,6 +142,69 @@ const executeWithRefresh = async (
 
   await sendSignedAndAdjacentTransactions({
     signedTransaction,
+    adjacentTransaction: signedRefreshTx,
+    connection,
+    sendingMessage: 'Executing instruction',
+    successMessage: 'Execution finalized',
+  })
+}
+
+/**
+ * Withdraw requires three transactions
+ * (1) reconcile and refresh ixs
+ * (2) refresh and withdraw ixs.
+ * @param tx Proposal transaction
+ * @param connection
+ * @param wallet
+ */
+const executeWithRefreshAndReconcile = async (
+  tx: Transaction,
+  connection: Connection,
+  wallet: WalletSigner,
+  instructionOption: InstructionOption
+) => {
+  // Get reconcile txs
+  const reconcileTxs = await getCastleReconcileInstruction(
+    connection,
+    wallet as unknown as WalletAdapter,
+    tx
+  )
+
+  console.log('reconcileTxs', reconcileTxs)
+  // Sign and send off all reconcile txs
+  await Promise.all(
+    reconcileTxs.map((transaction) =>
+      sendTransaction({
+        transaction,
+        wallet,
+        connection,
+        // sendingMessage: 'Cancelling proposal',
+        successMessage: 'Send reconcile tx',
+      })
+    )
+  )
+  console.log('sent off reconcile txs!')
+
+  // Get refresh Tx and sign alongside withdraw
+  const refreshIx = await getCastleRefreshInstruction(
+    connection,
+    wallet as unknown as WalletAdapter,
+    instructionOption
+  )
+
+  const refreshTx = new Transaction().add(refreshIx)
+
+  // Attempt to send both transactions in the same slot
+  const [signedProposalTx, signedRefreshTx] = await signTransactions({
+    transactionsAndSigners: [{ transaction: tx }, { transaction: refreshTx }],
+    wallet,
+    connection,
+  })
+  console.log('signed txs', signedProposalTx, signedRefreshTx)
+
+  // Send off refresh + withdraw transactions
+  await sendSignedAndAdjacentTransactions({
+    signedTransaction: signedProposalTx,
     adjacentTransaction: signedRefreshTx,
     connection,
     sendingMessage: 'Executing instruction',
