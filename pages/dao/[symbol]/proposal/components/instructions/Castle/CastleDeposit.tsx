@@ -114,7 +114,6 @@ const CastleDeposit = ({
     const getCastleConfig = async () => {
       const vaults =
         connection.cluster == 'mainnet' ? MAINNET_VAULTS : DEVNET_PARITY_VAULTS
-      console.log('vaults', vaults, 'connection', connection)
       setCastleVaults(vaults)
     }
     getCastleConfig()
