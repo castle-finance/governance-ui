@@ -18,11 +18,9 @@ import {
   PublicKey,
   SystemProgram,
   SYSVAR_CLOCK_PUBKEY,
-  Transaction,
   TransactionInstruction,
 } from '@solana/web3.js'
-import * as bufferLayout from '@solana/buffer-layout'
-import { BN, Instruction, Provider } from '@project-serum/anchor'
+import { BN, Provider } from '@project-serum/anchor'
 import { Marinade, MarinadeConfig } from '@marinade.finance/marinade-ts-sdk'
 import {
   getMintNaturalAmountFromDecimal,
@@ -42,11 +40,7 @@ import { WSOL_MINT } from '@components/instructions/tools'
 import Decimal from 'decimal.js'
 import { VaultClient } from '@castlefinance/vault-sdk'
 import { AssetAccount } from '@utils/uiTypes/assets'
-import {
-  DEVNET_PARITY_VAULTS,
-  MAINNET_VAULTS,
-  VaultConfig,
-} from '@castlefinance/vault-core'
+import { DEVNET_PARITY_VAULTS, MAINNET_VAULTS } from '@castlefinance/vault-core'
 
 export const validateInstruction = async ({
   schema,

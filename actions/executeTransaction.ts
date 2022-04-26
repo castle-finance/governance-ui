@@ -62,12 +62,7 @@ export const executeTransaction = async (
   // Send transaction based on its execution option
   switch (instructionOption) {
     case InstructionOptions.castleRefresh:
-      return await executeWithRefresh(
-        transaction,
-        connection,
-        wallet,
-        instructionOption
-      )
+      return await executeWithRefresh(transaction, connection, wallet)
     case InstructionOptions.castleReconcileRefresh:
       return await executeWithRefreshAndReconcile(
         transaction,
@@ -97,13 +92,11 @@ export const executeTransaction = async (
 const executeWithRefresh = async (
   tx: Transaction,
   connection: Connection,
-  wallet: WalletSigner,
-  instructionOption: InstructionOption
+  wallet: WalletSigner
 ) => {
   const refreshIx = await getCastleRefreshInstruction(
     connection,
-    wallet as unknown as WalletAdapter,
-    instructionOption
+    wallet as unknown as WalletAdapter
   )
 
   const refreshTx = new Transaction().add(refreshIx)
