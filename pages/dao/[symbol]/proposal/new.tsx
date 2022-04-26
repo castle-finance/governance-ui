@@ -370,8 +370,6 @@ const New = () => {
             governance={governance}
           ></CreateNftPluginMaxVoterWeightRecord>
         )
-      case Instructions.None:
-        return <Empty index={idx} governance={governance}></Empty>
       case Instructions.MangoAddOracle:
         return (
           <MakeAddOracle index={idx} governance={governance}></MakeAddOracle>
