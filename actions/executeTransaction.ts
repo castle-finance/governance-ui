@@ -107,7 +107,6 @@ const executeWithRefresh = async (
     wallet,
     connection,
   })
-  console.log('signed txs', signedTransaction, signedRefreshTx)
 
   await sendSignedAndAdjacentTransactions({
     signedTransaction,
@@ -152,7 +151,6 @@ const executeWithRefreshAndReconcile = async (
       })
     )
   )
-  console.log('sent off reconcile txs!')
 
   // Get refresh Tx and sign alongside withdraw
   const refreshIx = await getCastleRefreshInstruction(
@@ -168,7 +166,6 @@ const executeWithRefreshAndReconcile = async (
     wallet,
     connection,
   })
-  console.log('signed txs', signedProposalTx, signedRefreshTx)
 
   // Send off refresh + withdraw transactions
   await sendSignedAndAdjacentTransactions({

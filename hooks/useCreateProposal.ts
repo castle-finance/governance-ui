@@ -22,9 +22,7 @@ export default function useCreateProposal() {
     councilMint,
     canChooseWhoVote,
   } = useRealm()
-
   const { getRpcContext } = useRpcContext()
-
   const handleCreateProposal = async ({
     title,
     description,
@@ -65,8 +63,6 @@ export default function useCreateProposal() {
     const selectedGovernance = (await fetchRealmGovernance(
       governance?.pubkey
     )) as ProgramAccount<Governance>
-
-    console.log('about to create proposal')
     const proposalAddress = await createProposal(
       rpcContext,
       realm!,

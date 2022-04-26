@@ -36,6 +36,7 @@ export interface CastleDepositForm {
   programId: string | undefined
   mintInfo: MintInfo | undefined
 }
+
 export interface CastleWithdrawForm {
   amount: number | undefined
   governedTokenAccount: AssetAccount | undefined

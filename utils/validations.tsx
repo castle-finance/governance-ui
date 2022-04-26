@@ -278,7 +278,6 @@ export const getCastleDepositSchema = ({ form }) => {
   })
 }
 
-// TODO - double check this
 export const getCastleWithdrawSchema = () => {
   return yup.object().shape({
     governedTokenAccount: yup.object().required('Source account is required'),

@@ -170,23 +170,11 @@ const CastleWithdraw = ({
                 <div className="flex items-center">
                   Deposit Token: {value.token_mint}
                 </div>
-                {/* <div>Capacity: {}</div> */}
               </div>
             </div>
           </Select.Option>
         ))}
       </Select>
-      {/* TODO - add link to vault you'll be depositing to */}
-      {form.castleVaultId !== '' && (
-        <a
-          className="text-blue block"
-          href="https://castle.finance"
-          target="_blank"
-          rel="noreferrer"
-        >
-          View destination vault ↗️
-        </a>
-      )}
       <Input
         min={mintMinAmount}
         label="Amount"

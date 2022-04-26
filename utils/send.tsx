@@ -50,8 +50,6 @@ export async function sendTransaction({
     connection,
   })
 
-  console.log(signedTransaction)
-
   return await sendSignedTransaction({
     signedTransaction,
     connection,
@@ -107,8 +105,6 @@ export async function signTransactions({
   })
 
   let signed
-  console.log(transactionsAndSigners)
-
   try {
     signed = await wallet.signAllTransactions(
       transactionsAndSigners.map(({ transaction }) => transaction)

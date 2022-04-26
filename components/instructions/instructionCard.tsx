@@ -54,7 +54,6 @@ export default function InstructionCard({
       ? PlayState.Played
       : PlayState.Unplayed
   )
-  // // // TODO - put instruction option state here
   const [nftImgUrl, setNftImgUrl] = useState('')
   const [tokenImgUrl, setTokenImgUrl] = useState('')
 
@@ -190,7 +189,6 @@ export default function InstructionCard({
           </React.Fragment>
         )}
       </div>
-      <div className="flex justify-end items-center"></div>
     </div>
   )
 }
