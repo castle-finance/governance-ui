@@ -5,9 +5,7 @@ import type { EndpointInfo } from '../@types/types'
 const ENDPOINTS: EndpointInfo[] = [
   {
     name: 'mainnet',
-    url:
-      process.env.MAINNET_RPC ||
-      'https://solana-api.syndica.io/access-token/PBhwkfVgRLe1MEpLI5VbMDcfzXThjLKDHroc31shR5e7qrPqQi9TAUoV6aD3t0pg/rpc/',
+    url: process.env.MAINNET_RPC || 'https://api.dao.solana.com/',
   },
   {
     name: 'devnet',

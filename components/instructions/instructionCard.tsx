@@ -22,7 +22,6 @@ import InspectorButton from '@components/explorer/inspectorButton'
 import { FlagInstructionErrorButton } from './FlagInstructionErrorButton'
 import { Metadata } from '@metaplex-foundation/mpl-token-metadata'
 import axios from 'axios'
-import { notify } from '@utils/notifications'
 import useGovernanceAssets from '@hooks/useGovernanceAssets'
 import tokenService from '@utils/services/token'
 import InstructionOptionInput, {
@@ -93,10 +92,7 @@ export default function InstructionCard({
             const url = (await axios.get(tokenMetadata.data.data.uri)).data
             setNftImgUrl(url.image)
           } catch (e) {
-            notify({
-              type: 'error',
-              message: 'Unable to fetch nft',
-            })
+            console.log(e)
           }
         }
         return

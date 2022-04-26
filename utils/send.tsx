@@ -73,7 +73,7 @@ export async function signTransaction({
   connection: Connection
 }) {
   transaction.recentBlockhash = (
-    await connection.getRecentBlockhash('max')
+    await connection.getLatestBlockhash('max')
   ).blockhash
   transaction.setSigners(wallet!.publicKey!, ...signers.map((s) => s.publicKey))
   if (signers.length > 0) {
@@ -93,10 +93,8 @@ export async function signTransactions({
   }[]
   wallet: Wallet
   connection: Connection
-}): Promise<Transaction[]> {
-  const blockhash = (await connection.getRecentBlockhash('max')).blockhash
-  console.log(blockhash)
-  console.log(transactionsAndSigners)
+}) {
+  const blockhash = (await connection.getLatestBlockhash('max')).blockhash
   transactionsAndSigners.forEach(({ transaction, signers = [] }) => {
     transaction.recentBlockhash = blockhash
     transaction.setSigners(
