@@ -349,10 +349,6 @@ const New = () => {
             governance={governance}
           />
         )
-      case Instructions.Mint:
-        return <Mint index={idx} governance={governance}></Mint>
-      case Instructions.Base64:
-        return <CustomBase64 index={idx} governance={governance}></CustomBase64>
       case Instructions.CreateNftPluginRegistrar:
         return (
           <CreateNftPluginRegistrar
