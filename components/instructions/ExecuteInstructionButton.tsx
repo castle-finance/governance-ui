@@ -49,7 +49,7 @@ export function ExecuteInstructionButton({
   const connection = useWalletStore((s) => s.connection)
   const refetchProposals = useWalletStore((s) => s.actions.refetchProposals)
   const connected = useWalletStore((s) => s.connected)
-  
+
   const [currentSlot, setCurrentSlot] = useState(0)
 
   const canExecuteAt = proposal?.account.votingCompletedAt
