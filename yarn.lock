@@ -592,6 +592,27 @@
     "@solana/spl-token" "^0.1.8"
     typescript "^4.5.4"
 
+"@castlefinance/vault-core@^0.1.0", "@castlefinance/vault-core@^0.1.1":
+  version "0.1.2"
+  resolved "https://registry.yarnpkg.com/@castlefinance/vault-core/-/vault-core-0.1.2.tgz#623e6c939396c7da0c9ca9bba819b651fd715b1a"
+  integrity sha512-PjhyZbM0Q5g1yWYKQDcaUWAO4vSvoMk98XNWHE1PohdH6xoLQCuoLZ4dYwAg62s7BtTkqdId4CoPg2BJ7XUykw==
+
+"@castlefinance/vault-sdk@^1.7.1":
+  version "1.7.1"
+  resolved "https://registry.yarnpkg.com/@castlefinance/vault-sdk/-/vault-sdk-1.7.1.tgz#ac5dcbab46df65c586a2f4b7a3dc6243a831b4be"
+  integrity sha512-6/Ot08Yk5iNgqwBsAWBgbLBbetknxOOQeVO+z+UXjzYI2iKXzPsv0HpMdGzcvI/2wJ8RkOMU5v4BwZ5KYqxq9Q==
+  dependencies:
+    "@castlefinance/vault-core" "^0.1.0"
+    "@jet-lab/jet-engine" "^0.2.15"
+    "@port.finance/port-sdk" "^0.2.33"
+    "@project-serum/anchor" "0.18.2"
+    "@solana/spl-token" "^0.1.8"
+    "@solana/web3.js" "^1.31.0"
+    "@solendprotocol/solend-sdk" "^0.4.4"
+    big.js "^6.1.1"
+    bigint-buffer "^1.1.5"
+    buffer-layout "^1.2.2"
+
 "@cspotcode/source-map-consumer@0.8.0":
   version "0.8.0"
   resolved "https://registry.yarnpkg.com/@cspotcode/source-map-consumer/-/source-map-consumer-0.8.0.tgz#33bf4b7b39c178821606f669bbc447a6a629786b"
@@ -1046,6 +1067,24 @@
     "@types/node" "*"
     "@types/yargs" "^16.0.0"
     chalk "^4.0.0"
+
+"@jet-lab/jet-engine@^0.2.15":
+  version "0.2.50"
+  resolved "https://registry.yarnpkg.com/@jet-lab/jet-engine/-/jet-engine-0.2.50.tgz#55dc001018a0eb012940e21563a2c40582352eeb"
+  integrity sha512-N73kuVmJiPoQUTAVTHX88qRVQp2w3YBhHWj089AYCx/Ao8xxHea5LggZVP/NYM+dji/13BKeCeoUoUo2S9tUGA==
+  dependencies:
+    "@project-serum/anchor" "^0.23.0"
+    "@project-serum/serum" "^0.13.60"
+    "@pythnetwork/client" "^2.5.1"
+    "@solana/buffer-layout" "^4.0.0"
+    "@solana/buffer-layout-utils" "^0.2.0"
+    "@solana/spl-governance" "^0.0.29"
+    "@solana/spl-token" "^0.2.0"
+    "@solana/web3.js" "^1.36.0"
+    eventemitter3 "^4.0.7"
+    lodash "^4.17.21"
+    react "^17.0.0"
+    react-dom "^17.0.0"
 
 "@ledgerhq/devices@^6.20.0":
   version "6.20.0"
@@ -1633,10 +1672,49 @@
   resolved "https://registry.npmjs.org/@popperjs/core/-/core-2.9.3.tgz"
   integrity sha512-xDu17cEfh7Kid/d95kB6tZsLOmSWKCZKtprnhVepjsSaCij+lM3mItSJDuuHDMbCWTh8Ejmebwb+KONcCJ0eXQ==
 
+"@port.finance/port-sdk@^0.2.33":
+  version "0.2.67"
+  resolved "https://registry.yarnpkg.com/@port.finance/port-sdk/-/port-sdk-0.2.67.tgz#48ddd27af7b14c956fa6a2941d84edc61eb9c082"
+  integrity sha512-qm7IHdfP/vhSv41RHveEUsJSBOknPeWYuRwZS5oISwe1kvcOBHkuh/9GuJD24TlE9HaoO+JGq3rpn8YLFjNh8w==
+  dependencies:
+    "@project-serum/anchor" "^0.21.0"
+    "@saberhq/solana-contrib" "^1.12.53"
+    "@saberhq/token-utils" "^1.12.53"
+    "@solana/buffer-layout" "^3.0.0"
+    "@solana/spl-token" "^0.1.8"
+    "@solana/spl-token-registry" "^0.2.1107"
+    big.js "^6.1.1"
+    bignumber.js "^9.0.1"
+    buffer-layout "1.2.2"
+    jsbi "^4.1.0"
+    prettier "^2.4.1"
+    tiny-invariant "^1.2.0"
+    typescript "^4.3.5"
+
 "@project-serum/anchor-cli@^0.18.2":
   version "0.18.2"
   resolved "https://registry.yarnpkg.com/@project-serum/anchor-cli/-/anchor-cli-0.18.2.tgz#748ce259fa693fb3589a96aa9f82bd373c078948"
   integrity sha512-zZvLSa0DvsjsKSK8cU7ENqPB1tQ8WCT6dTY2IaJjWdG0UvXUTri8phnYyF5+Zti+frTdKyggOtI+i1QApOWhRQ==
+
+"@project-serum/anchor@0.18.2", "@project-serum/anchor@^0.18.0", "@project-serum/anchor@^0.18.2":
+  version "0.18.2"
+  resolved "https://registry.yarnpkg.com/@project-serum/anchor/-/anchor-0.18.2.tgz#0f13b5c2046446b7c24cf28763eec90febb28485"
+  integrity sha512-uyjiN/3Ipp+4hrZRm/hG18HzGLZyvP790LXrCsGO3IWxSl28YRhiGEpKnZycfMW94R7nxdUoE3wY67V+ZHSQBQ==
+  dependencies:
+    "@project-serum/borsh" "^0.2.2"
+    "@solana/web3.js" "^1.17.0"
+    base64-js "^1.5.1"
+    bn.js "^5.1.2"
+    bs58 "^4.0.1"
+    buffer-layout "^1.2.0"
+    camelcase "^5.3.1"
+    crypto-hash "^1.3.0"
+    eventemitter3 "^4.0.7"
+    find "^0.3.0"
+    js-sha256 "^0.9.0"
+    pako "^2.0.3"
+    snake-case "^3.0.4"
+    toml "^3.0.0"
 
 "@project-serum/anchor@0.20.1", "@project-serum/anchor@^0.20.1":
   version "0.20.1"
@@ -1682,26 +1760,6 @@
   version "0.16.2"
   resolved "https://registry.yarnpkg.com/@project-serum/anchor/-/anchor-0.16.2.tgz#b8b4ec4c749d59a224108f8d82ab68217ef752ae"
   integrity sha512-wOJwObd4wOZ5tRRMCKYjeMNsEmf7vuC71KQRnw6wthhErL8c/818n4gYIZCf/1ZPl/8WPruIlmtQHDSEyy2+0Q==
-  dependencies:
-    "@project-serum/borsh" "^0.2.2"
-    "@solana/web3.js" "^1.17.0"
-    base64-js "^1.5.1"
-    bn.js "^5.1.2"
-    bs58 "^4.0.1"
-    buffer-layout "^1.2.0"
-    camelcase "^5.3.1"
-    crypto-hash "^1.3.0"
-    eventemitter3 "^4.0.7"
-    find "^0.3.0"
-    js-sha256 "^0.9.0"
-    pako "^2.0.3"
-    snake-case "^3.0.4"
-    toml "^3.0.0"
-
-"@project-serum/anchor@^0.18.0", "@project-serum/anchor@^0.18.2":
-  version "0.18.2"
-  resolved "https://registry.yarnpkg.com/@project-serum/anchor/-/anchor-0.18.2.tgz#0f13b5c2046446b7c24cf28763eec90febb28485"
-  integrity sha512-uyjiN/3Ipp+4hrZRm/hG18HzGLZyvP790LXrCsGO3IWxSl28YRhiGEpKnZycfMW94R7nxdUoE3wY67V+ZHSQBQ==
   dependencies:
     "@project-serum/borsh" "^0.2.2"
     "@solana/web3.js" "^1.17.0"
@@ -1821,6 +1879,17 @@
   version "0.13.61"
   resolved "https://registry.yarnpkg.com/@project-serum/serum/-/serum-0.13.61.tgz#1f0e6dfa7786a71e4317593911e9915d8b2a06e6"
   integrity sha512-aebaRGQ0/K7a5kJ9UXO59BAQFJILVu5jbGobU8GD2CTSy6SPceprB6/pgZmZLQIabhXWUHaZRF/wXIClgWataA==
+  dependencies:
+    "@project-serum/anchor" "^0.11.1"
+    "@solana/spl-token" "^0.1.6"
+    "@solana/web3.js" "^1.21.0"
+    bn.js "^5.1.2"
+    buffer-layout "^1.2.0"
+
+"@project-serum/serum@^0.13.60":
+  version "0.13.65"
+  resolved "https://registry.yarnpkg.com/@project-serum/serum/-/serum-0.13.65.tgz#6d3cf07912f13985765237f053cca716fe84b0b0"
+  integrity sha512-BHRqsTqPSfFB5p+MgI2pjvMBAQtO8ibTK2fYY96boIFkCI3TTwXDt2gUmspeChKO2pqHr5aKevmexzAcXxrSRA==
   dependencies:
     "@project-serum/anchor" "^0.11.1"
     "@solana/spl-token" "^0.1.6"
@@ -2065,6 +2134,19 @@
     tiny-invariant "^1.2.0"
     tslib "^2.3.1"
 
+"@saberhq/solana-contrib@^1.12.53", "@saberhq/solana-contrib@^1.12.69":
+  version "1.12.69"
+  resolved "https://registry.yarnpkg.com/@saberhq/solana-contrib/-/solana-contrib-1.12.69.tgz#902da3a6175482b736caa4c7301d36bbaacca7f1"
+  integrity sha512-5vDuYac7VuIDyi3w4g3CiSFEGE00Zg08wPd2ylm1e5nsaf+BFL2T4u+MkeZrz7LLTypsaZFDf/nDNli3weMq+A==
+  dependencies:
+    "@solana/buffer-layout" "^4.0.0"
+    "@types/promise-retry" "^1.1.3"
+    "@types/retry" "^0.12.2"
+    promise-retry "^2.0.1"
+    retry "^0.13.1"
+    tiny-invariant "^1.2.0"
+    tslib "^2.4.0"
+
 "@saberhq/token-utils@^1.11.3", "@saberhq/token-utils@^1.12.48":
   version "1.12.48"
   resolved "https://registry.yarnpkg.com/@saberhq/token-utils/-/token-utils-1.12.48.tgz#2949ed44119583553990fde28aa62b21afc61a15"
@@ -2076,6 +2158,18 @@
     "@ubeswap/token-math" "^4.4.4"
     tiny-invariant "^1.2.0"
     tslib "^2.3.1"
+
+"@saberhq/token-utils@^1.12.53":
+  version "1.12.69"
+  resolved "https://registry.yarnpkg.com/@saberhq/token-utils/-/token-utils-1.12.69.tgz#870c9d72d7f822622162749380486b06e1c062c3"
+  integrity sha512-XyWDap5Hv/3YfaODPb9p1VBrLw8mT818ihdWeI573wv2XdXfkkB5RBaMCp4+K93BBmlWuaZ4Hibm+apDt8jPVw==
+  dependencies:
+    "@saberhq/solana-contrib" "^1.12.69"
+    "@solana/buffer-layout" "^4.0.0"
+    "@solana/spl-token" "^0.1.8"
+    "@ubeswap/token-math" "^4.4.6"
+    tiny-invariant "^1.2.0"
+    tslib "^2.4.0"
 
 "@saberhq/use-solana@^1.12.26":
   version "1.12.35"
@@ -2163,6 +2257,18 @@
     "@project-serum/anchor" "^0.18.0"
     "@project-serum/serum" "^0.13.61"
 
+"@solana/spl-governance@^0.0.29":
+  version "0.0.29"
+  resolved "https://registry.yarnpkg.com/@solana/spl-governance/-/spl-governance-0.0.29.tgz#8a691ace5242a1174ede73657c06267184f1c4b3"
+  integrity sha512-+Wrk4pHKDDzw7d2gXtpplslfLwIjWIDLB4o78LSiiPCtY+fObtKabWwyH/AVWXhebSGj+bkW6j0i9/WE4xbnCg==
+  dependencies:
+    "@solana/web3.js" "^1.22.0"
+    bignumber.js "^9.0.1"
+    bn.js "^5.1.3"
+    borsh "^0.3.1"
+    bs58 "^4.0.1"
+    superstruct "^0.15.2"
+
 "@solana/spl-governance@^0.0.34":
   version "0.0.34"
   resolved "https://registry.yarnpkg.com/@solana/spl-governance/-/spl-governance-0.0.34.tgz#c61d81d356dbcee961bbc85e5d3538846fea57ad"
@@ -2194,6 +2300,13 @@
     tweetnacl "^1.0.3"
     webpack-dev-server "^3.11.2"
 
+"@solana/spl-token-registry@^0.2.1107":
+  version "0.2.3695"
+  resolved "https://registry.yarnpkg.com/@solana/spl-token-registry/-/spl-token-registry-0.2.3695.tgz#649ffa80e94b7f347a0eaf0cf335d5b6db5a5a98"
+  integrity sha512-HTmaznzmviXPW0SJIhuTn3w0baEegaWoAPkOfZLAj0CJQvFuEP49/WYvkO4Jf+8qHTMHpDqfvkPw7GI4/fg3Nw==
+  dependencies:
+    cross-fetch "3.0.6"
+
 "@solana/spl-token-registry@^0.2.3470":
   version "0.2.3470"
   resolved "https://registry.yarnpkg.com/@solana/spl-token-registry/-/spl-token-registry-0.2.3470.tgz#ca419a46d1699101e4da389ec51697c285dc38cf"
@@ -2213,7 +2326,7 @@
     buffer-layout "^1.2.0"
     dotenv "10.0.0"
 
-"@solana/spl-token@0.2.0":
+"@solana/spl-token@0.2.0", "@solana/spl-token@^0.2.0":
   version "0.2.0"
   resolved "https://registry.yarnpkg.com/@solana/spl-token/-/spl-token-0.2.0.tgz#329bb6babb5de0f9c40035ddb1657f01a8347acd"
   integrity sha512-RWcn31OXtdqIxmkzQfB2R+WpsJOVS6rKuvpxJFjvik2LyODd+WN58ZP3Rpjpro03fscGAkzlFuP3r42doRJgyQ==
@@ -2385,6 +2498,22 @@
     secp256k1 "^4.0.2"
     superstruct "^0.14.2"
     tweetnacl "^1.0.0"
+
+"@solendprotocol/solend-sdk@^0.4.4":
+  version "0.4.9"
+  resolved "https://registry.yarnpkg.com/@solendprotocol/solend-sdk/-/solend-sdk-0.4.9.tgz#c0e3f24148c4951bf0cfdf16c884bc4ffbb42b7b"
+  integrity sha512-tVsvE0kap58/eMeeSonv0tEiqlnvYC0x90MXKoGz2D0oyQBx9Eneba5wXDh9FJ3S5S2RFqwXIAnmdOzTLZzV/A==
+  dependencies:
+    "@pythnetwork/client" "^2.5.1"
+    "@solana/buffer-layout" "^3.0.0"
+    "@solana/spl-token" "^0.1.8"
+    "@solana/web3.js" "^1.31.0"
+    axios "^0.24.0"
+    bignumber.js "^9.0.2"
+    bn.js "^5.2.0"
+    buffer "^6.0.3"
+    buffer-layout "^1.2.0"
+    isomorphic-fetch "^3.0.0"
 
 "@solendprotocol/solend-sdk@^0.5.5":
   version "0.5.5"
@@ -2791,6 +2920,11 @@
   resolved "https://registry.yarnpkg.com/@types/retry/-/retry-0.12.1.tgz#d8f1c0d0dc23afad6dc16a9e993a0865774b4065"
   integrity sha512-xoDlM2S4ortawSWORYqsdU+2rxdh4LRW9ytc3zmT37RIKQh6IHyKwwtKhKis9ah8ol07DCkZxPt8BBvPjC6v4g==
 
+"@types/retry@^0.12.2":
+  version "0.12.2"
+  resolved "https://registry.yarnpkg.com/@types/retry/-/retry-0.12.2.tgz#ed279a64fa438bb69f2480eda44937912bb7480a"
+  integrity sha512-XISRgDJ2Tc5q4TRqvgJtzsRkFYNJzZrhTdtMoGVBttwzzQJkPnS3WWTFc7kuDRoPtPakl+T+OfdEUjYJj7Jbow==
+
 "@types/scheduler@*":
   version "0.16.1"
   resolved "https://registry.npmjs.org/@types/scheduler/-/scheduler-0.16.1.tgz"
@@ -2953,6 +3087,17 @@
   version "4.4.4"
   resolved "https://registry.yarnpkg.com/@ubeswap/token-math/-/token-math-4.4.4.tgz#98ff131a4371a6229245d8aa79bf198a35682b9c"
   integrity sha512-AbcyDhKVPaFQOuzak1UPyBPNbo6IHCKY4C2xq5DOcW6qmlI+4EaxI9mU2jpG/joYAtqPYrx2BbLizU+TfB6bmg==
+  dependencies:
+    big.js "^6.1.1"
+    decimal.js-light "^2.5.1"
+    tiny-invariant "^1.2.0"
+    toformat "^2.0.0"
+    tslib "^2.3.1"
+
+"@ubeswap/token-math@^4.4.6":
+  version "4.4.6"
+  resolved "https://registry.yarnpkg.com/@ubeswap/token-math/-/token-math-4.4.6.tgz#8f3c3eafd73f0c30f2e3eaf68595f888f6955635"
+  integrity sha512-wEdexdyhymaSnyvJ2dx512Fxzxo/dkMqIRZQ9cePTqhJwyUg9jOpi2XAq0FAOf7KQEdYgfDSIMrkWeBNvfoYVQ==
   dependencies:
     big.js "^6.1.1"
     decimal.js-light "^2.5.1"
@@ -3777,7 +3922,7 @@ buffer-indexof@^1.0.0:
   resolved "https://registry.npmjs.org/buffer-indexof/-/buffer-indexof-1.1.1.tgz"
   integrity sha512-4/rOEg86jivtPTeOUUT61jJO1Ya1TrR/OkqCSZDyq84WJh3LuuiphBYJN+fm5xufIk4XAFcEwte/8WzC8If/1g==
 
-buffer-layout@^1.2.0, buffer-layout@^1.2.1, buffer-layout@^1.2.2:
+buffer-layout@1.2.2, buffer-layout@^1.2.0, buffer-layout@^1.2.1, buffer-layout@^1.2.2:
   version "1.2.2"
   resolved "https://registry.npmjs.org/buffer-layout/-/buffer-layout-1.2.2.tgz"
   integrity sha512-kWSuLN694+KTk8SrYvCqwP2WcgQjoRCiF5b4QDvkkz8EmgD+aWAIceGFKMIAdmF/pH+vpgNV3d3kAKorcdAmWA==
@@ -10000,6 +10145,11 @@ prettier@^2.0.2:
   version "2.2.1"
   resolved "https://registry.npmjs.org/prettier/-/prettier-2.2.1.tgz"
 
+prettier@^2.4.1:
+  version "2.6.2"
+  resolved "https://registry.yarnpkg.com/prettier/-/prettier-2.6.2.tgz#e26d71a18a74c3d0f0597f55f01fb6c06c206032"
+  integrity sha512-PkUpF+qoXTqhOeWL9fu7As8LXsIUZ1WYaJiY/a7McAQzxjk82OF0tibkFXVCDImZtWxbvojFjerkiLb0/q8mew==
+
 prettier@^2.5.1:
   version "2.5.1"
   resolved "https://registry.yarnpkg.com/prettier/-/prettier-2.5.1.tgz#fff75fa9d519c54cf0fce328c1017d94546bc56a"
@@ -10301,6 +10451,15 @@ react-device-detect@^2.1.2:
   dependencies:
     ua-parser-js "^0.7.30"
 
+react-dom@^17.0.0:
+  version "17.0.2"
+  resolved "https://registry.yarnpkg.com/react-dom/-/react-dom-17.0.2.tgz#ecffb6845e3ad8dbfcdc498f0d0a939736502c23"
+  integrity sha512-s4h96KtLDUQlsENhMn1ar8t2bEa+q/YAtj8pPPdIjPDGBDIVNsrD9aXNWqspUe6AzKCIG0C1HZZLqLV7qpOBGA==
+  dependencies:
+    loose-envify "^1.1.0"
+    object-assign "^4.1.1"
+    scheduler "^0.20.2"
+
 react-dom@^18.0.0:
   version "18.0.0"
   resolved "https://registry.yarnpkg.com/react-dom/-/react-dom-18.0.0.tgz#26b88534f8f1dbb80853e1eabe752f24100d8023"
@@ -10402,6 +10561,14 @@ react-use-gesture@^9.1.3:
   version "9.1.3"
   resolved "https://registry.yarnpkg.com/react-use-gesture/-/react-use-gesture-9.1.3.tgz#92bd143e4f58e69bd424514a5bfccba2a1d62ec0"
   integrity sha512-CdqA2SmS/fj3kkS2W8ZU8wjTbVBAIwDWaRprX7OKaj7HlGwBasGEFggmk5qNklknqk9zK/h8D355bEJFTpqEMg==
+
+react@^17.0.0:
+  version "17.0.2"
+  resolved "https://registry.yarnpkg.com/react/-/react-17.0.2.tgz#d0b5cc516d29eb3eee383f75b62864cfb6800037"
+  integrity sha512-gnhPt75i/dq/z3/6q/0asP78D0u592D5L1pd7M8P+dck6Fu/jJeL6iVVK23fptSUZj8Vjf++7wXA8UNclGQcbA==
+  dependencies:
+    loose-envify "^1.1.0"
+    object-assign "^4.1.1"
 
 react@^18.0.0:
   version "18.0.0"
@@ -10831,6 +10998,14 @@ saxes@^5.0.1:
   resolved "https://registry.npmjs.org/saxes/-/saxes-5.0.1.tgz"
   dependencies:
     xmlchars "^2.2.0"
+
+scheduler@^0.20.2:
+  version "0.20.2"
+  resolved "https://registry.yarnpkg.com/scheduler/-/scheduler-0.20.2.tgz#4baee39436e34aa93b4874bddcbf0fe8b8b50e91"
+  integrity sha512-2eWfGgAqqWFGqtdMmcL5zCMK1U8KlXv8SQFGglL3CEtd0aDVDWgeF/YoCmvln55m5zSk3J/20hTaSBeSObsQDQ==
+  dependencies:
+    loose-envify "^1.1.0"
+    object-assign "^4.1.1"
 
 scheduler@^0.21.0:
   version "0.21.0"
@@ -11935,6 +12110,11 @@ tslib@^2.0.0, tslib@^2.0.3, tslib@^2.1.0, tslib@^2.3.0, tslib@^2.3.1:
   resolved "https://registry.yarnpkg.com/tslib/-/tslib-2.3.1.tgz#e8a335add5ceae51aa261d32a490158ef042ef01"
   integrity sha512-77EbyPPpMz+FRFRuAFlWMtmgUWGe9UOG2Z25NqCwiIjRhOf5iKGuzSe5P2w1laq+FkRy4p+PCuVkJSGkzTEKVw==
 
+tslib@^2.4.0:
+  version "2.4.0"
+  resolved "https://registry.yarnpkg.com/tslib/-/tslib-2.4.0.tgz#7cecaa7f073ce680a05847aa77be941098f36dc3"
+  integrity sha512-d6xOpEDfsi2CZVlPQzGeux8XMwLT9hssAsaPYExaQMuYskwb+x1x7J371tWlbBdWHroy99KnVB6qIkUbs5X3UQ==
+
 tsutils@^3.21.0:
   version "3.21.0"
   resolved "https://registry.npmjs.org/tsutils/-/tsutils-3.21.0.tgz"
@@ -12055,6 +12235,11 @@ typescript@^4.1.2, typescript@^4.2.4, typescript@^4.5.4, typescript@^4.5.5, type
   version "4.6.3"
   resolved "https://registry.yarnpkg.com/typescript/-/typescript-4.6.3.tgz#eefeafa6afdd31d725584c67a0eaba80f6fc6c6c"
   integrity sha512-yNIatDa5iaofVozS/uQJEl3JRWLKKGJKh6Yaiv0GLGSuhpFJe7P3SbHZ8/yjAHRQwKRoA6YZqlfjXWmVzoVSMw==
+
+typescript@^4.3.5:
+  version "4.6.4"
+  resolved "https://registry.yarnpkg.com/typescript/-/typescript-4.6.4.tgz#caa78bbc3a59e6a5c510d35703f6a09877ce45e9"
+  integrity sha512-9ia/jWHIEbo49HfjrLGfKbZSuWo9iTMwXO+Ca3pRsSpbsMbc7/IU8NKdCZVRRBafVPGnoJeFL76ZOAA84I9fEg==
 
 ua-parser-js@^0.7.30:
   version "0.7.31"

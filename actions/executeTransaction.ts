@@ -29,6 +29,7 @@ import {
   InstructionOption,
   InstructionOptions,
 } from '@components/InstructionOptions'
+import Wallet from '@project-serum/sol-wallet-adapter'
 
 export const executeTransaction = async (
   { connection, wallet, programId }: RpcContext,
@@ -104,7 +105,7 @@ const executeWithRefresh = async (
   // Attempt to send both transactions in the same slot
   const [signedTransaction, signedRefreshTx] = await signTransactions({
     transactionsAndSigners: [{ transaction: tx }, { transaction: refreshTx }],
-    wallet,
+    wallet: wallet as unknown as Wallet,
     connection,
   })
 
@@ -163,7 +164,7 @@ const executeWithRefreshAndReconcile = async (
   // Attempt to send both transactions in the same slot
   const [signedProposalTx, signedRefreshTx] = await signTransactions({
     transactionsAndSigners: [{ transaction: tx }, { transaction: refreshTx }],
-    wallet,
+    wallet: wallet as unknown as Wallet,
     connection,
   })
 
