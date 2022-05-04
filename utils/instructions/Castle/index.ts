@@ -1,15 +1,16 @@
-import { WalletAdapter } from '@blockworks-foundation/mango-client'
+import { BN, WalletAdapter } from '@blockworks-foundation/mango-client'
 import {
   VaultConfig,
   DeploymentEnvs,
   Clusters,
 } from '@castlefinance/vault-core'
 import { VaultClient } from '@castlefinance/vault-sdk'
+import { Provider } from '@castlefinance/vault-sdk/node_modules/@project-serum/anchor'
 import { AnchorWallet } from '@friktion-labs/friktion-sdk/dist/cjs/src/miscUtils'
-import { Provider, BN, ProgramAccount } from '@project-serum/anchor'
 import {
   serializeInstructionToBase64,
   ProposalTransaction,
+  ProgramAccount,
 } from '@solana/spl-governance'
 import {
   Token,
