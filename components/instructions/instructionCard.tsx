@@ -6,6 +6,7 @@ import {
   ProposalTransaction,
 } from '@solana/spl-governance'
 import {
+  ALL_CASTLE_PROGRAMS,
   getAccountName,
   getInstructionDescriptor,
   InstructionDescriptor,
@@ -56,6 +57,10 @@ export default function InstructionCard({
   )
   const [nftImgUrl, setNftImgUrl] = useState('')
   const [tokenImgUrl, setTokenImgUrl] = useState('')
+
+  const allProposalPrograms = proposalInstruction.account.instructions
+    ?.map((i) => i.programId.toBase58())
+    .flat()
 
   useEffect(() => {
     getInstructionDescriptor(
@@ -182,10 +187,15 @@ export default function InstructionCard({
               setPlaying={setPlaying}
               instructionOption={instructionOption}
             />
-            <InstructionOptionInput
-              value={instructionOption}
-              setValue={setInstructionOption}
-            />
+            {/* Show execution option if the proposal contains a Castle program id */}
+            {allProposalPrograms?.filter((a) =>
+              ALL_CASTLE_PROGRAMS.map((a) => a.toBase58()).includes(a)
+            ) && (
+              <InstructionOptionInput
+                value={instructionOption}
+                setValue={setInstructionOption}
+              />
+            )}
           </React.Fragment>
         )}
       </div>

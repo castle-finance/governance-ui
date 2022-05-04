@@ -20,6 +20,7 @@ import { SOLEND_PROGRAM_INSTRUCTIONS } from './programs/solend'
 import { ATA_PROGRAM_INSTRUCTIONS } from './programs/associatedTokenAccount'
 import { ConnectionContext } from '@utils/connection'
 import { NFT_VOTER_INSTRUCTIONS } from './programs/nftVotingClient'
+import { PROGRAM_IDS } from '@castlefinance/vault-sdk'
 /**
  * Default governance program id instance
  */
@@ -182,6 +183,12 @@ const HIDDEN_MNGO_TREASURES = [
 ]
 
 export const HIDDEN_TREASURES = [...HIDDEN_MNGO_TREASURES]
+
+export const ALL_CASTLE_PROGRAMS = [
+  PROGRAM_IDS['devnet-parity'],
+  PROGRAM_IDS['devnet-staging'],
+  PROGRAM_IDS['mainnet'],
+]
 
 export interface AccountDescriptor {
   name: string

@@ -15,18 +15,16 @@ import useGovernanceAssets from '@hooks/useGovernanceAssets'
 import { Governance } from '@solana/spl-governance'
 import { ProgramAccount } from '@solana/spl-governance'
 import GovernedAccountSelect from '../../GovernedAccountSelect'
-import { getCastleDepositInstruction } from '@utils/instructionTools'
 import Select from '@components/inputs/Select'
 import {
+  Clusters,
   DeploymentEnvs,
-  DEVNET_PARITY_VAULTS,
-  MAINNET_VAULTS,
   VaultConfig,
 } from '@castlefinance/vault-core'
-
-type VaultConfigs =
-  | VaultConfig<DeploymentEnvs.devnetParity>[]
-  | VaultConfig<DeploymentEnvs.mainnet>[]
+import {
+  getCastleVaults,
+  getCastleDepositInstruction,
+} from '@utils/instructions/Castle'
 
 const CastleDeposit = ({
   index,
@@ -51,7 +49,9 @@ const CastleDeposit = ({
     mintInfo: undefined,
   })
 
-  const [castleVaults, setCastleVaults] = useState<VaultConfigs | null>(null)
+  const [castleVaults, setCastleVaults] = useState<
+    VaultConfig<DeploymentEnvs>[] | null
+  >(null)
 
   const [governedAccount, setGovernedAccount] = useState<
     ProgramAccount<Governance> | undefined
@@ -112,8 +112,12 @@ const CastleDeposit = ({
   // Grab Castle vault information from config server
   useEffect(() => {
     const getCastleConfig = async () => {
-      const vaults =
-        connection.cluster == 'mainnet' ? MAINNET_VAULTS : DEVNET_PARITY_VAULTS
+      const vaults = (await getCastleVaults()).filter((v) =>
+        connection.cluster == 'mainnet'
+          ? v.cluster == Clusters.mainnetBeta
+          : v.cluster == Clusters.devnet
+      )
+      console.log(vaults)
       setCastleVaults(vaults)
     }
     getCastleConfig()

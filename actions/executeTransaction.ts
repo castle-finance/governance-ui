@@ -6,30 +6,30 @@ import {
 } from '@solana/web3.js'
 
 import {
-  getGovernanceProgramVersion,
-  Proposal,
-  ProposalTransaction,
-  WalletSigner,
-} from '@solana/spl-governance'
-
-import { withExecuteTransaction } from '@solana/spl-governance'
-import { RpcContext } from '@solana/spl-governance'
-import { ProgramAccount } from '@solana/spl-governance'
-import {
   sendSignedAndAdjacentTransactions,
   sendTransaction,
   signTransactions,
 } from '@utils/send'
-import {
-  getCastleReconcileInstruction,
-  getCastleRefreshInstruction,
-} from '@utils/instructionTools'
 import { WalletAdapter } from '@solana/wallet-adapter-base'
 import {
   InstructionOption,
   InstructionOptions,
 } from '@components/InstructionOptions'
 import Wallet from '@project-serum/sol-wallet-adapter'
+import {
+  getCastleRefreshInstruction,
+  getCastleReconcileInstruction,
+} from '@utils/instructions/Castle'
+// import { ProgramAccount } from '@project-serum/anchor'
+import {
+  RpcContext,
+  Proposal,
+  ProposalTransaction,
+  getGovernanceProgramVersion,
+  withExecuteTransaction,
+  WalletSigner,
+  ProgramAccount,
+} from '@solana/spl-governance'
 
 export const executeTransaction = async (
   { connection, wallet, programId }: RpcContext,
@@ -60,10 +60,16 @@ export const executeTransaction = async (
   // Create proposal instruction
   const transaction = new Transaction().add(...instructions)
 
+  console.log(instructionOption)
   // Send transaction based on its execution option
   switch (instructionOption) {
     case InstructionOptions.castleRefresh:
-      return await executeWithRefresh(transaction, connection, wallet)
+      return await executeWithRefresh(
+        transaction,
+        connection,
+        wallet,
+        instruction
+      )
     case InstructionOptions.castleReconcileRefresh:
       return await executeWithRefreshAndReconcile(
         transaction,
@@ -93,11 +99,13 @@ export const executeTransaction = async (
 const executeWithRefresh = async (
   tx: Transaction,
   connection: Connection,
-  wallet: WalletSigner
+  wallet: WalletSigner,
+  instruction: ProgramAccount<ProposalTransaction>
 ) => {
   const refreshIx = await getCastleRefreshInstruction(
     connection,
-    wallet as unknown as WalletAdapter
+    (wallet as unknown) as WalletAdapter,
+    instruction
   )
 
   const refreshTx = new Transaction().add(refreshIx)
@@ -105,7 +113,7 @@ const executeWithRefresh = async (
   // Attempt to send both transactions in the same slot
   const [signedTransaction, signedRefreshTx] = await signTransactions({
     transactionsAndSigners: [{ transaction: tx }, { transaction: refreshTx }],
-    wallet: wallet as unknown as Wallet,
+    wallet: (wallet as unknown) as Wallet,
     connection,
   })
 
@@ -132,10 +140,11 @@ const executeWithRefreshAndReconcile = async (
   wallet: WalletSigner,
   instruction: ProgramAccount<ProposalTransaction>
 ) => {
+  console.log('executing with reconcile')
   // Get reconcile txs
   const reconcileTxs = await getCastleReconcileInstruction(
     connection,
-    wallet as unknown as WalletAdapter,
+    (wallet as unknown) as WalletAdapter,
     instruction
   )
 
@@ -156,7 +165,8 @@ const executeWithRefreshAndReconcile = async (
   // Get refresh Tx and sign alongside withdraw
   const refreshIx = await getCastleRefreshInstruction(
     connection,
-    wallet as unknown as WalletAdapter
+    (wallet as unknown) as WalletAdapter,
+    instruction
   )
 
   const refreshTx = new Transaction().add(refreshIx)
@@ -164,7 +174,7 @@ const executeWithRefreshAndReconcile = async (
   // Attempt to send both transactions in the same slot
   const [signedProposalTx, signedRefreshTx] = await signTransactions({
     transactionsAndSigners: [{ transaction: tx }, { transaction: refreshTx }],
-    wallet: wallet as unknown as Wallet,
+    wallet: (wallet as unknown) as Wallet,
     connection,
   })
 
