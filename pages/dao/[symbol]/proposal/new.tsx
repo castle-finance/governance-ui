@@ -62,7 +62,13 @@ import MakeChangeSpotMarket from './components/instructions/Mango/MakeChangeSpot
 import MakeCreatePerpMarket from './components/instructions/Mango/MakeCreatePerpMarket'
 import useCreateProposal from '@hooks/useCreateProposal'
 import CastleDeposit from './components/instructions/Castle/CastleDeposit'
+import MakeInitMarketParams from './components/instructions/Foresight/MakeInitMarketParams'
+import MakeInitMarketListParams from './components/instructions/Foresight/MakeInitMarketListParams'
+import MakeInitCategoryParams from './components/instructions/Foresight/MakeInitCategoryParams'
+import MakeResolveMarketParams from './components/instructions/Foresight/MakeResolveMarketParams'
+import MakeAddMarketListToCategoryParams from './components/instructions/Foresight/MakeAddMarketListToCategoryParams'
 import RealmConfig from './components/instructions/RealmConfig'
+import MakeAddMarketMetadataParams from './components/instructions/Foresight/MakeAddMarketMetadataParams'
 import CloseTokenAccount from './components/instructions/CloseTokenAccount'
 import { InstructionDataWithHoldUpTime } from 'actions/createProposal'
 import CastleWithdraw from './components/instructions/Castle/CastleWithdraw'
@@ -76,8 +82,9 @@ const defaultGovernanceCtx: InstructionsContext = {
   governance: null,
   setGovernance: () => null,
 }
-export const NewProposalContext =
-  createContext<InstructionsContext>(defaultGovernanceCtx)
+export const NewProposalContext = createContext<InstructionsContext>(
+  defaultGovernanceCtx
+)
 
 // Takes the first encountered governance account
 function extractGovernanceAccountFromInstructionsData(
@@ -103,8 +110,10 @@ const New = () => {
     description: '',
   })
   const [formErrors, setFormErrors] = useState({})
-  const [governance, setGovernance] =
-    useState<ProgramAccount<Governance> | null>(null)
+  const [
+    governance,
+    setGovernance,
+  ] = useState<ProgramAccount<Governance> | null>(null)
   const [isLoadingSignedProposal, setIsLoadingSignedProposal] = useState(false)
   const [isLoadingDraft, setIsLoadingDraft] = useState(false)
   const isLoading = isLoadingSignedProposal || isLoadingDraft
@@ -275,8 +284,9 @@ const New = () => {
   }, [instructionsData[0].governedAccount?.pubkey])
 
   useEffect(() => {
-    const governedAccount =
-      extractGovernanceAccountFromInstructionsData(instructionsData)
+    const governedAccount = extractGovernanceAccountFromInstructionsData(
+      instructionsData
+    )
 
     setGovernance(governedAccount)
   }, [instructionsData])
@@ -401,6 +411,48 @@ const New = () => {
             governance={governance}
           ></MakeCreatePerpMarket>
         )
+      case Instructions.ForesightInitMarket:
+        return (
+          <MakeInitMarketParams
+            index={idx}
+            governance={governance}
+          ></MakeInitMarketParams>
+        )
+      case Instructions.ForesightInitMarketList:
+        return (
+          <MakeInitMarketListParams
+            index={idx}
+            governance={governance}
+          ></MakeInitMarketListParams>
+        )
+      case Instructions.ForesightInitCategory:
+        return (
+          <MakeInitCategoryParams
+            index={idx}
+            governance={governance}
+          ></MakeInitCategoryParams>
+        )
+      case Instructions.ForesightResolveMarket:
+        return (
+          <MakeResolveMarketParams
+            index={idx}
+            governance={governance}
+          ></MakeResolveMarketParams>
+        )
+      case Instructions.ForesightAddMarketListToCategory:
+        return (
+          <MakeAddMarketListToCategoryParams
+            index={idx}
+            governance={governance}
+          ></MakeAddMarketListToCategoryParams>
+        )
+      case Instructions.ForesightAddMarketMetadata:
+        return (
+          <MakeAddMarketMetadataParams
+            index={idx}
+            governance={governance}
+          ></MakeAddMarketMetadataParams>
+        )
       case Instructions.RealmConfig:
         return <RealmConfig index={idx} governance={governance}></RealmConfig>
       case Instructions.Grant:
@@ -487,8 +539,9 @@ const New = () => {
             >
               <h2>Transactions</h2>
               {instructionsData.map((instruction, idx) => {
-                const availableInstructionsForIdx =
-                  getAvailableInstructionsForIndex(idx)
+                const availableInstructionsForIdx = getAvailableInstructionsForIndex(
+                  idx
+                )
                 return (
                   <div
                     key={idx}
