@@ -6,7 +6,6 @@ import {
 } from '@castlefinance/vault-core'
 import { VaultClient } from '@castlefinance/vault-sdk'
 import { AnchorWallet } from '@friktion-labs/friktion-sdk/dist/cjs/src/miscUtils'
-import { EndpointTypes } from '@models/types'
 import { Provider, BN, ProgramAccount } from '@project-serum/anchor'
 import {
   serializeInstructionToBase64,
@@ -27,7 +26,6 @@ import {
 } from '@solana/web3.js'
 import { ConnectionContext, getNetworkFromEndpoint } from '@utils/connection'
 import { validateInstruction } from '@utils/instructionTools'
-import { notify } from '@utils/notifications'
 import { AssetAccount } from '@utils/uiTypes/assets'
 import {
   CastleDepositForm,
