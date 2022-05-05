@@ -130,10 +130,12 @@ const CastleWithdraw = ({
   }, [realmInfo?.programId])
 
   useEffect(() => {
-    handleSetInstructions(
-      { governedAccount: governedAccount, getInstruction },
-      index
-    )
+    if (wallet) {
+      handleSetInstructions(
+        { governedAccount: governedAccount, getInstruction },
+        index
+      )
+    }
   }, [form])
 
   useEffect(() => {

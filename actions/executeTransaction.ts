@@ -10,7 +10,6 @@ import {
   sendTransaction,
   signTransactions,
 } from '@utils/send'
-import { WalletAdapter } from '@solana/wallet-adapter-base'
 import {
   InstructionOption,
   InstructionOptions,
@@ -104,7 +103,7 @@ const executeWithRefresh = async (
 ) => {
   const refreshIx = await getCastleRefreshInstruction(
     connection,
-    (wallet as unknown) as WalletAdapter,
+    wallet,
     instruction
   )
 
@@ -144,7 +143,7 @@ const executeWithRefreshAndReconcile = async (
   // Get reconcile txs
   const reconcileTxs = await getCastleReconcileInstruction(
     connection,
-    (wallet as unknown) as WalletAdapter,
+    wallet,
     instruction
   )
 
@@ -165,7 +164,7 @@ const executeWithRefreshAndReconcile = async (
   // Get refresh Tx and sign alongside withdraw
   const refreshIx = await getCastleRefreshInstruction(
     connection,
-    (wallet as unknown) as WalletAdapter,
+    wallet,
     instruction
   )
 

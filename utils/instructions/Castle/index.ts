@@ -11,6 +11,7 @@ import {
   serializeInstructionToBase64,
   ProposalTransaction,
   ProgramAccount,
+  WalletSigner,
 } from '@solana/spl-governance'
 import {
   Token,
@@ -157,7 +158,7 @@ export async function getCastleWithdrawInstruction({
   amount: number
   programId: PublicKey | undefined
   connection: ConnectionContext
-  wallet: WalletAdapter | undefined
+  wallet: WalletAdapter | SignerWalletAdapter | undefined
   setFormErrors: any
 }): Promise<UiInstruction> {
   const isValid = await validateInstruction({ schema, form, setFormErrors })
@@ -270,7 +271,7 @@ export async function getCastleWithdrawInstruction({
  */
 export async function getCastleReconcileInstruction(
   connection: Connection,
-  wallet: WalletAdapter | undefined,
+  wallet: WalletSigner,
   instruction: ProgramAccount<ProposalTransaction>
 ) {
   const vaultClient = await getCastleVaultClientFromProposal(
@@ -327,7 +328,7 @@ export async function getCastleRefreshInstruction(
  * @returns
  */
 const getCastleVaultClientFromForm = async (
-  wallet,
+  wallet: WalletSigner,
   connection: ConnectionContext,
   form: CastleDepositForm | CastleWithdrawForm
 ) => {
@@ -374,7 +375,7 @@ const getCastleVaultClientFromForm = async (
  * @returns
  */
 const getCastleVaultClientFromProposal = async (
-  wallet,
+  wallet: WalletSigner,
   connection: Connection,
   instruction: ProgramAccount<ProposalTransaction>
 ) => {
